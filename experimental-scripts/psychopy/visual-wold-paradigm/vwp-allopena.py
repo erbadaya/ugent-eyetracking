@@ -29,9 +29,9 @@
 # We want to send a trigger when images are shown
 # We want to send a trigger for audio onset
 # We want to send a trigger for target onset
-# We want to send a trigger for audio offset
+# We want to send a trigger for target offset
 # We want to save ROIs
-# Log information of set type, target type, RT, target position, specific items shown
+# Log information of set type, target type, target position, specific items shown
 
 # Additionally, we are going to write this code so that we can try it on our machines
 # without the need of the eye-tracker
@@ -41,9 +41,6 @@
 
 from psychopy import gui, visual, event, logging, data, sound, clock
 import time, os, numpy
-from psychopy.constants import (NOT_STARTED, STARTED, PLAYING, PAUSED,
-                                STOPPED, FINISHED, PRESSED, RELEASED, FOREVER)
-
 
 # eye-tracking libraries
 import pylink
@@ -75,7 +72,7 @@ win = visual.Window([win_width,win_height], checkTiming=False, color = (1,1,1)) 
 # https://github.com/psychopy/psychopy/issues/5937
 
 # stimuli
-# in this case, w ehave a .xlsx file (os_conditions.xlsx) that has the combination of stimuli + information about conditions
+# in this case, we have a .xlsx file (os_conditions.xlsx) that has the combination of stimuli + information about conditions
 # load it in
 # materials (audios and images) are stored in the materials folder
 # check section 7.3 to follow this bit of code
@@ -84,6 +81,63 @@ win = visual.Window([win_width,win_height], checkTiming=False, color = (1,1,1)) 
 trial_list = data.importConditions('os_conditions.xlsx') 
 trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 
+# Open connection to the Host PC
+# Here we create dummy_mode
+
+dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
+tracker_mode = False # assuming we are piloting in our machine, set to True when using the tracker
+
+if dummy_mode:
+    et_tracker = pylink.EyeLink(None)
+    et_version = 0 # version of tracker, we will call this later in the code so we need to set a value for dummy_mode too
+else:
+    et_tracker = pylink.Eyelink("100.1.1.1")
+    et_version = int(vstr.split()[-1].split('.')[0]) # version of the tracker, important for how we select information to save
+    # different versions refer to data differently
+
+# Open .EDF file
+
+et_tracker.openDataFile(edf_file)
+
+# Configure the tracker
+# Put the tracker in offline mode before changing the parameters
+
+et_tracker.setOfflineMode()
+pylink.pumpDelay(100)
+
+et_tracker.sendCommand("sample_rate 1000") 
+et_tracker.sendCommand("recording_parse_type = GAZE")
+et_tracker.sendCommand("select_parser_configuration 0")
+et_tracker.sendCommand("calibaration_type = HV9")
+et_tracker.sendCommand("screen_pixel_coords = 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
+et_tracker.sendMessage("DISPLAY_COORDS 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
+
+# events to store
+
+file_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT'
+link_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT'
+
+# samples to store
+
+if et_version > 3:
+    file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT'
+    link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT'
+else:
+    file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,GAZERES,BUTTON,STATUS,INPUT'
+    link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT'
+et_tracker.sendCommand("file_event_filter = %s" % file_event_flags)
+et_tracker.sendCommand("file_sample_data = %s" % file_sample_flags)
+et_tracker.sendCommand("link_event_filter = %s" % link_event_flags)
+et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
+
+# Experiment starts
+# We first perform the calibration and validation
+# In this case, we are doing it without modifying the original set up (i.e., without customizing it)
+
+if not dummy_mode:
+    et_tracker.doTrackerSetup()
+
+trial_index = 1
 for trial in trials:
     
     # positions
@@ -112,28 +166,62 @@ for trial in trials:
     image_O3.draw()
     image_O4.draw()
     mouse = event.Mouse(visible = False, newPos = (0,0))
+    
+    # mark trial onset for the eye-tracker
+    
+    et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
+    
+    # information to be shown in the host PC
+    # in this case, we want to know what trial we are recording
+    
+    et_tracker.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
+    
+    # every trial starts with a drift correction
+    
+    if not dummy_mode:
+        et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
+    
+    
+    # start recording
+    et_tracker.setOfflineMode()
+    if not dummy_mode:
+        et_tracker.startRecording(1, 1, 1, 1)
+    
+    # presentation of visual stimuli
+    
     win.flip()
     print('show images')
-    time.sleep(1) # preview window
-    # State variables for tracking mouse clicks
+    # send trigger that images have been sent
+    et_tracker.sendMessage('image_onset')
     
+    time.sleep(1) # preview window
+    
+    # tracking mouse clicks
     mouseIsDown = False
     instructionPlayed = False 
     targetPlayed = False
     audioFinished = False
     
-    print(carrier_sound.isFinished)
-    print(carrier_sound.isPlaying)
+    # loop for audio
     while True:
             if instructionPlayed == False:
                 carrier_sound.play()
+                # send trigger audio onset
+                et_tracker.sendMessage('audio_onset')
+                print("audio onset")
                 clock.wait(carrier_sound.duration)
                 carrier_sound.stop()
                 instructionPlayed = True
             if instructionPlayed == True and targetPlayed == False:
                 target_sound.play()
+                # send trigger target onset
+                et_tracker.sendMessage('target_onset')
+                print("target onset")
                 clock.wait(target_sound.duration)
                 target_sound.stop()
+                # send trigger target offset
+                et_tracker.sendMessage('target_offset')
+                print("target offset")
                 targetPlayed = True
             if targetPlayed == True and audioFinished == False:
                 mouse.setVisible(visible = True)
@@ -142,24 +230,38 @@ for trial in trials:
                 if mouse.getPressed()[0] == 0 and mouseIsDown:
                     mouseIsDown = False
                     break
-#            instructionPlayed = True
-#            print(carrier_sound.duration)
-#            carrier_sound.status = FINISHED
-#            print(carrier_sound.status)
-#        elif carrier_sound.isPlaying:
-#            carrier_sound.stop()
-#            target_sound.play(when=carrier_sound.status == FINISHED)
-#            targetPlayed = True
-#            print('target onset') 
-#            target_sound.status = FINISHED
-#        elif targetPlayed == True and audioFinished == False and target_sound.status == FINISHED:
-#            audioFinished = True
-#            print('target offset')
-#            if mouse.getPressed()[0] == 1 and mouseIsDown == False:
-#                mouseIsDown = True
-#            if mouse.getPressed()[0] == 0 and mouseIsDown:
-#                mouseIsDown = False
-        # Check if the mouse is released
-#            win.flip()
-#            break
+                    
+    # log information about this trial in the EDF file
     
+    et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
+    et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
+    et_tracker.sendMessage('!V TRIAL_VAR O1 %s' % trial["O1"])
+    et_tracker.sendMessage('!V TRIAL_VAR O1_pos %s %s' % positions[0])
+    et_tracker.sendMessage('!V TRIAL_VAR O2 %s' % trial["O2"])
+    et_tracker.sendMessage('!V TRIAL_VAR O2_pos %s %s' % positions[1])
+    et_tracker.sendMessage('!V TRIAL_VAR O3 %s' % trial["O3"])
+    et_tracker.sendMessage('!V TRIAL_VAR O3_pos %s %s' % positions[2])
+    et_tracker.sendMessage('!V TRIAL_VAR O4 %s' % trial["O4"])
+    et_tracker.sendMessage('!V TRIAL_VAR O4_pos %s %s' % positions[3])
+    et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
+    et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
+    et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
+    et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
+    
+    # stop recording
+    if not dummy_mode:
+        pylink.pumpDelay(100)
+        et_tracker.stopRecording()
+        et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
+    
+    trial_index += 1
+
+# End of experiment
+# save EDF file and close connection with the Host PC
+
+if not dummy_mode:
+    et_tracker.setOfflineMode()
+    pylink.pumpDelay(100)
+    et_tracker.closeDataFile()
+    et_tracker.receiveDataFile(edf_file, os.getcwd() + "/el_data/" + edf_file)
+    et_tracker.close()

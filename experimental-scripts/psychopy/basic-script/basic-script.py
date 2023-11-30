@@ -130,10 +130,10 @@ if not dummy_mode:
 
 # 10 trials, iterate through the loop of faces
 
+trial_index = 1
 for i in range(10):
     
     # load and create trial stimuli on the fly
-    
     i += 1
     numpy.random.shuffle(faces)
     face_st = faces[i]
@@ -148,7 +148,7 @@ for i in range(10):
     
     # mark trial onset for the eye-tracker
     
-    et_tracker.sendMessage('TRIALID' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
+    et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
     
     # information to be shown in the host PC
     # in this case, we want to know what trial we are recording
@@ -181,14 +181,16 @@ for i in range(10):
     # in this case, what specific stimuli was shown
     # and the emotion shown
     
-    et_tracker.sendMessage('!V TRIAL_VAR image %s' face_st)
-    et_tracker.sendMessage('!V TRIAL_VAR emotion %s' emotion)
+    et_tracker.sendMessage('!V TRIAL_VAR image %s' % face_st)
+    et_tracker.sendMessage('!V TRIAL_VAR emotion %s' % emotion)
     
     # stop recording
     if not dummy_mode:
         pylink.pumpDelay(100)
         et_tracker.stopRecording()
         et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
+    
+    trial_index += 1
     
 # End of trials
 # save EDF file and close connection with the Host PC
