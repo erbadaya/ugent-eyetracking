@@ -153,7 +153,7 @@ for i in range(10):
     # information to be shown in the host PC
     # in this case, we want to know what trial we are recording
     
-    et_tracket.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
+    et_tracker.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
     
     # every trial starts with a drift correction
     
