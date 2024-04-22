@@ -80,11 +80,31 @@ tracker_mode = False # assuming we are piloting in our machine, set to True when
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
-    et_version = 0 # version of tracker, we will call this later in the code so we need to set a value for dummy_mode too
+    et_version = 0  # set version to 0, in case running in Dummy mode
 else:
-    et_tracker = pylink.Eyelink("100.1.1.1")
-    et_version = int(vstr.split()[-1].split('.')[0]) # version of the tracker, important for how we select information to save
-    # different versions refer to data differently
+    try:
+        et_tracker = pylink.EyeLink("100.1.1.1")
+    except RuntimeError as error:
+        dlg = gui.Dlg("Dummy Mode?")
+        dlg.addText("Couldn't connect to tracker at 100.1.1.1 -- continue in Dummy Mode?")
+        #dlg.addField('File Name:', edf_fname)
+        # show dialog and wait for OK or Cancel
+        ok_data = dlg.show()
+        if dlg.OK:  # if ok_data is not None
+            #print('EDF data filename: {}'.format(ok_data[0]))
+            dummy_mode = True
+            et_tracker = pylink.EyeLink(None)
+        else:
+            print('user cancelled')
+            core.quit()
+            sys.exit()
+            
+if not dummy_mode:
+    vstr = et_tracker.getTrackerVersionString()
+    print(vstr)
+    et_version = int(vstr.split()[-1].split('.')[0])
+    # print out some version info in the shell
+    print('Running experiment on %s, version %d' % (vstr, et_version))
 
 # Open .EDF file
 
@@ -126,6 +146,7 @@ et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
 # In this case, we are doing it without modifying the original set up (i.e., without customizing it)
 
 if not dummy_mode:
+    pylink.openGraphics() # unless you want to use genv, cf. manual
     et_tracker.doTrackerSetup()
 
 # 10 trials, iterate through the loop of faces
@@ -154,6 +175,7 @@ for i in range(10):
     # in this case, we want to know what trial we are recording
     
     et_tracker.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
+    
     
     # every trial starts with a drift correction
     
@@ -199,5 +221,6 @@ if not dummy_mode:
     et_tracker.setOfflineMode()
     pylink.pumpDelay(100)
     et_tracker.closeDataFile()
+    pylink.pumpDelay(500)
     et_tracker.receiveDataFile(edf_file, os.getcwd() + "/el_data/" + edf_file)
     et_tracker.close()
