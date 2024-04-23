@@ -51,7 +51,7 @@ while ppt_number_taken:
     edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
     
     behavioural_file = '/subject_' + ppt_number + '.txt'
-    edf_file = edf_name + '.edf' # remember to add the .edf extension
+    edf_file = edf_name + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
@@ -101,7 +101,6 @@ else:
             
 if not dummy_mode:
     vstr = et_tracker.getTrackerVersionString()
-    print(vstr)
     et_version = int(vstr.split()[-1].split('.')[0])
     # print out some version info in the shell
     print('Running experiment on %s, version %d' % (vstr, et_version))
@@ -222,5 +221,5 @@ if not dummy_mode:
     pylink.pumpDelay(100)
     et_tracker.closeDataFile()
     pylink.pumpDelay(500)
-    et_tracker.receiveDataFile(edf_file, os.getcwd() + "/el_data/" + edf_file)
+    et_tracker.receiveDataFile(edf_file, os.getcwd() + "\\el_data\\" + edf_file)
     et_tracker.close()
