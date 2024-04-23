@@ -165,7 +165,7 @@ et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
 # We first perform the calibration and validation
 # In this case, we are doing it without modifying the original set up (i.e., without customizing it)
 
-message("The calibration will now start. Press the spacebar to enter the calibration window. You can press 'Enter' to see the camera, or 'c' to start calibrating afterwards.")
+message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
 
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
@@ -246,3 +246,6 @@ if not dummy_mode:
     pylink.pumpDelay(500)
     et_tracker.receiveDataFile(edf_file, local_edf)
     et_tracker.close()
+
+message("That's the end of the experiment. Press the spacebar to exit.")
+win.close()

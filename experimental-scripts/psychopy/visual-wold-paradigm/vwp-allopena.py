@@ -42,9 +42,12 @@
 from psychopy import gui, visual, event, logging, data, sound, clock
 import time, os, numpy
 
+from psychopy import prefs
+prefs.hardware['audioLib'] = ['ptb'] # ptb library has by far the lowest latencies
+
 # eye-tracking libraries
 import pylink
-from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember to put this script in your folder
+from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember to put this script in your folder & sounds
 
 # Participant data
 
@@ -62,11 +65,28 @@ while ppt_number_taken:
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
+# To communicate with participants
+
+def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0.0, 0.0), color = "black"):
+    message_on_screen = visual.TextStim(win, text = "OK")
+    message_on_screen.text    = message_text
+    message_on_screen.height  = height
+    message_on_screen.pos     = pos
+    message_on_screen.color   = color
+    
+    message_on_screen.draw()
+    win.flip()
+    if duration == 0: # for the welcome and goodbye
+        event.waitKeys(keyList = response_key)
+    else:
+        time.sleep(duration) # for the feedback
+
+
 # Screen size
 
 win_width = 1920
 win_height = 1080
-win = visual.Window([win_width,win_height], checkTiming=False, color = (1,1,1)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
 # more information on this issue here:
 # https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
 # https://github.com/psychopy/psychopy/issues/5937
@@ -84,16 +104,41 @@ trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
-tracker_mode = False # assuming we are piloting in our machine, set to True when using the tracker
+dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
-    et_version = 0 # version of tracker, we will call this later in the code so we need to set a value for dummy_mode too
+    et_version = 0  # set version to 0, in case running in Dummy mode
 else:
-    et_tracker = pylink.Eyelink("100.1.1.1")
-    et_version = int(vstr.split()[-1].split('.')[0]) # version of the tracker, important for how we select information to save
-    # different versions refer to data differently
+    try:
+        et_tracker = pylink.EyeLink("100.1.1.1")
+    except RuntimeError as error:
+        dlg = gui.Dlg("Dummy Mode?")
+        dlg.addText("Couldn't connect to tracker at 100.1.1.1 -- continue in Dummy Mode?")
+        #dlg.addField('File Name:', edf_fname)
+        # show dialog and wait for OK or Cancel
+        ok_data = dlg.show()
+        if dlg.OK:  # if ok_data is not None
+            #print('EDF data filename: {}'.format(ok_data[0]))
+            dummy_mode = True
+            et_tracker = pylink.EyeLink(None)
+        else:
+            print('user cancelled')
+            core.quit()
+            sys.exit()
+            
+if not dummy_mode:
+    vstr = et_tracker.getTrackerVersionString()
+    et_version = int(vstr.split()[-1].split('.')[0])
+    # print out some version info in the shell
+    print('Running experiment on %s, version %d' % (vstr, et_version))
+
+# To save .edf files
+
+results_folder = 'et_results'
+if not os.path.exists(results_folder):
+    os.makedirs(results_folder)
+local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from Host to Presentation PC
 
 # Open .EDF file
 
@@ -108,7 +153,7 @@ pylink.pumpDelay(100)
 et_tracker.sendCommand("sample_rate 1000") 
 et_tracker.sendCommand("recording_parse_type = GAZE")
 et_tracker.sendCommand("select_parser_configuration 0")
-et_tracker.sendCommand("calibaration_type = HV9")
+et_tracker.sendCommand("calibration_type = HV9")
 et_tracker.sendCommand("screen_pixel_coords = 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
 et_tracker.sendMessage("DISPLAY_COORDS 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
 
@@ -134,11 +179,17 @@ et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
 # We first perform the calibration and validation
 # In this case, we are doing it without modifying the original set up (i.e., without customizing it)
 
+message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
+
 if not dummy_mode:
+    genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
+    pylink.openGraphicsEx(genv)
     et_tracker.doTrackerSetup()
 
-trial_index = 1
+trial_index = 0
 for trial in trials:
+    
+    trial_index =+ 1
     
     # positions
     # defined as absolute values (i.e., stay in the same places regardless of monitor dimensions)
@@ -174,7 +225,7 @@ for trial in trials:
     # information to be shown in the host PC
     # in this case, we want to know what trial we are recording
     
-    et_tracker.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
+    et_tracker.sendCommand("record_status_message'%s'" % trial_index)
     
     # every trial starts with a drift correction
     
@@ -194,7 +245,7 @@ for trial in trials:
     # send trigger that images have been sent
     et_tracker.sendMessage('image_onset')
     
-    time.sleep(1) # preview window
+    core.wait(1) # preview window
     
     # tracking mouse clicks
     mouseIsDown = False
@@ -209,7 +260,7 @@ for trial in trials:
                 # send trigger audio onset
                 et_tracker.sendMessage('audio_onset')
                 print("audio onset")
-                clock.wait(carrier_sound.duration)
+                clock.wait(carrier_sound.getDuration() )
                 carrier_sound.stop()
                 instructionPlayed = True
             if instructionPlayed == True and targetPlayed == False:
@@ -217,7 +268,7 @@ for trial in trials:
                 # send trigger target onset
                 et_tracker.sendMessage('target_onset')
                 print("target onset")
-                clock.wait(target_sound.duration)
+                clock.wait(target_sound.getDuration())
                 target_sound.stop()
                 # send trigger target offset
                 et_tracker.sendMessage('target_offset')
@@ -230,23 +281,38 @@ for trial in trials:
                 if mouse.getPressed()[0] == 0 and mouseIsDown:
                     mouseIsDown = False
                     break
-                    
-    # log information about this trial in the EDF file
+    # log information about areas of interest
+    # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
+    # RECTANGLE <id> <left> <top> <right> <bottom> [label]
+    # we need to know the size of the images and the size of the screen
     
-    et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O1 %s' % trial["O1"])
-    et_tracker.sendMessage('!V TRIAL_VAR O1_pos %s %s' % positions[0])
-    et_tracker.sendMessage('!V TRIAL_VAR O2 %s' % trial["O2"])
-    et_tracker.sendMessage('!V TRIAL_VAR O2_pos %s %s' % positions[1])
-    et_tracker.sendMessage('!V TRIAL_VAR O3 %s' % trial["O3"])
-    et_tracker.sendMessage('!V TRIAL_VAR O3_pos %s %s' % positions[2])
-    et_tracker.sendMessage('!V TRIAL_VAR O4 %s' % trial["O4"])
-    et_tracker.sendMessage('!V TRIAL_VAR O4_pos %s %s' % positions[3])
-    et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
+    if not dummy_mode:
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[0][0] - 512-0.5*189, positions[0][1] + 384 - 0.5*189, positions[0][0] + 512 +0.5*189, positions[0][1] + 384+0.5*189, trial["O1"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[1][0] - 512-0.5*189, positions[1][1] + 384 - 0.5*189, positions[1][0] + 512 +0.5*189, positions[1][1] + 384+0.5*189, trial["O2"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[2][0] - 512-0.5*189, positions[2][1] + 384 - 0.5*189, positions[2][0] + 512 +0.5*189, positions[2][1] + 384+0.5*189, trial["O3"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[3][0] - 512-0.5*189, positions[3][1] + 384 - 0.5*189, positions[3][0] + 512 +0.5*189, positions[3][1] + 384+0.5*189, trial["O4"])
+        
+    # we also want to send the actual images presented to DataViewer
+    # (just for the sake of it)
+    
+    
+    
+    # log information about this trial in the EDF file
+    if not dummy_mode:
+        et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
+        et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
+        et_tracker.sendMessage('!V TRIAL_VAR O1 %s' % trial["O1"])
+        et_tracker.sendMessage('!V TRIAL_VAR O1_pos %s %s' % positions[0])
+        et_tracker.sendMessage('!V TRIAL_VAR O2 %s' % trial["O2"])
+        et_tracker.sendMessage('!V TRIAL_VAR O2_pos %s %s' % positions[1])
+        et_tracker.sendMessage('!V TRIAL_VAR O3 %s' % trial["O3"])
+        et_tracker.sendMessage('!V TRIAL_VAR O3_pos %s %s' % positions[2])
+        et_tracker.sendMessage('!V TRIAL_VAR O4 %s' % trial["O4"])
+        et_tracker.sendMessage('!V TRIAL_VAR O4_pos %s %s' % positions[3])
+        et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
+        et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
+        et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
+        et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
     
     # stop recording
     if not dummy_mode:
@@ -263,5 +329,8 @@ if not dummy_mode:
     et_tracker.setOfflineMode()
     pylink.pumpDelay(100)
     et_tracker.closeDataFile()
-    et_tracker.receiveDataFile(edf_file, os.getcwd() + "/el_data/" + edf_file)
+    et_tracker.receiveDataFile(edf_file, local_edf)
     et_tracker.close()
+
+message("That's the end of the experiment. Press the spacebar to exit.")
+win.close()
