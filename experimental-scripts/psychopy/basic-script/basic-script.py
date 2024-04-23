@@ -55,15 +55,30 @@ while ppt_number_taken:
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
+# To communicate with participants
+
+def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0.0, 0.0), color = "black"):
+    message_on_screen = visual.TextStim(win, text = "OK")
+    message_on_screen.text    = message_text
+    message_on_screen.height  = height
+    message_on_screen.pos     = pos
+    message_on_screen.color   = color
+    
+    message_on_screen.draw()
+    win.flip()
+    if duration == 0: # for the welcome and goodbye
+        event.waitKeys(keyList = response_key)
+    else:
+        time.sleep(duration) # for the feedback
+
 # Screen size
 
 win_width = 1920
 win_height = 1080
-win = visual.Window([win_width,win_height], checkTiming=False, color = (1,1,1)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
 # more information on this issue here:
 # https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
 # https://github.com/psychopy/psychopy/issues/5937
-
 
 # Load stimuli
 
@@ -75,8 +90,7 @@ response_keys = ['s', 'h']
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
-tracker_mode = False # assuming we are piloting in our machine, set to True when using the tracker
+dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
@@ -105,6 +119,13 @@ if not dummy_mode:
     # print out some version info in the shell
     print('Running experiment on %s, version %d' % (vstr, et_version))
 
+# To save .edf files
+
+results_folder = 'et_results'
+if not os.path.exists(results_folder):
+    os.makedirs(results_folder)
+local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from Host to Presentation PC
+
 # Open .EDF file
 
 et_tracker.openDataFile(edf_file)
@@ -118,7 +139,7 @@ pylink.pumpDelay(100)
 et_tracker.sendCommand("sample_rate 1000") 
 et_tracker.sendCommand("recording_parse_type = GAZE")
 et_tracker.sendCommand("select_parser_configuration 0")
-et_tracker.sendCommand("calibaration_type = HV5")
+et_tracker.sendCommand("calibration_type = HV5")
 et_tracker.sendCommand("screen_pixel_coords = 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
 et_tracker.sendMessage("DISPLAY_COORDS 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
 
@@ -144,17 +165,19 @@ et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
 # We first perform the calibration and validation
 # In this case, we are doing it without modifying the original set up (i.e., without customizing it)
 
+message("The calibration will now start. Press the spacebar to enter the calibration window. You can press 'Enter' to see the camera, or 'c' to start calibrating afterwards.")
+
 if not dummy_mode:
-    pylink.openGraphics() # unless you want to use genv, cf. manual
+    genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
+    pylink.openGraphicsEx(genv)
     et_tracker.doTrackerSetup()
 
 # 10 trials, iterate through the loop of faces
 
-trial_index = 1
+trial_index = 0
 for i in range(10):
-    
+    trial_index += 1
     # load and create trial stimuli on the fly
-    i += 1
     numpy.random.shuffle(faces)
     face_st = faces[i]
     if face_st.startswith ('S'):
@@ -173,7 +196,7 @@ for i in range(10):
     # information to be shown in the host PC
     # in this case, we want to know what trial we are recording
     
-    et_tracker.sendCommand("record_status_message TRIAL number '%d'" % trial_index)
+    et_tracker.sendCommand("record_status_message '%s'" % trial_index)
     
     
     # every trial starts with a drift correction
@@ -221,5 +244,5 @@ if not dummy_mode:
     pylink.pumpDelay(100)
     et_tracker.closeDataFile()
     pylink.pumpDelay(500)
-    et_tracker.receiveDataFile(edf_file, os.getcwd() + "\\el_data\\" + edf_file)
+    et_tracker.receiveDataFile(edf_file, local_edf)
     et_tracker.close()
