@@ -39,7 +39,7 @@
 
 # Libraries
 
-from psychopy import gui, visual, event, logging, data, sound, clock
+from psychopy import gui, visual, event, logging, data, sound, clock, core
 import time, os, numpy
 
 from psychopy import prefs
@@ -84,12 +84,14 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
 
 # Screen size
 
-win_width = 1920
-win_height = 1080
-win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+
+win = visual.Window(fullscr = True, checkTiming=False, color = "white", units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
 # more information on this issue here:
 # https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
 # https://github.com/psychopy/psychopy/issues/5937
+
+win_width = win.size[0]
+win_height = win.size[1]
 
 # stimuli
 # in this case, we have a .xlsx file (os_conditions.xlsx) that has the combination of stimuli + information about conditions
@@ -104,7 +106,7 @@ trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
+dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
@@ -191,24 +193,38 @@ for trial in trials:
     
     trial_index =+ 1
     
+    print(trial)
+    
+    # all images should be the same, so we only need one
+    
+    dimensions = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = (0, 0), units = 'pix')
+    
+    img_width = dimensions.size[0]
+    img_height = dimensions.size[1]
+    
     # positions
     # defined as absolute values (i.e., stay in the same places regardless of monitor dimensions)
     # the top right of the window has coordinates (1,1), the bottom left is (-1,-1)
     # in a cross, it'd be: 0, 0.5 (top of the cross); 0.5, 0 (right of the cross); 0, -0.5 (bottom of the cross), -0.5, 0 (left of the cross)
-    positions = [(0, 0.5), (0.5, 0), (0, -0.5), (-0.5, 0)]
+    # because of EyeLinkCoreGraphicsPsychoPy, this needs to be in _pixels_
+    
+    y_displacement = int((win_height/2)/2) # half of the screen is the top (+) and the bottom (-), since 0 is the center. we want the image to be presented in the middle of the top and the bottom half
+    x_displacement = int((win_width/2)/2)
+    
+    positions = [[0, 0 + y_displacement], [0 +  x_displacement, 0], [0, 0 - y_displacement], [0 - x_displacement , 0]] # NB you could also have this in your conditions file! It's just here for illustrative purposes
     numpy.random.shuffle(positions)
     
-    print(trial)
-    
     # images
-    image_O1 = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = positions[0])
-    image_O2 = visual.ImageStim(win, image = 'materials/images/' + trial["O2"], pos = positions[1])
-    image_O3 = visual.ImageStim(win, image = 'materials/images/' + trial["O3"], pos = positions[2])
-    image_O4 = visual.ImageStim(win, image = 'materials/images/' + trial["O4"], pos = positions[3])
+    
+    image_O1 = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = positions[0], units = 'pix')
+    image_O2 = visual.ImageStim(win, image = 'materials/images/' + trial["O2"], pos = positions[1], units = 'pix')
+    image_O3 = visual.ImageStim(win, image = 'materials/images/' + trial["O3"], pos = positions[2], units = 'pix')
+    image_O4 = visual.ImageStim(win, image = 'materials/images/' + trial["O4"], pos = positions[3], units = 'pix')
     
     #sound
     # to send triggers for target onset, instead of measuring at what precise time it happens in an audio
     # we have cut the audio in two, so the trigger is sent when the second audio (i.e., the target) is played
+    
     carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"])
     target_sound = sound.Sound('materials/audios/' + trial["target_audio"])
     
@@ -216,7 +232,8 @@ for trial in trials:
     image_O2.draw()
     image_O3.draw()
     image_O4.draw()
-    mouse = event.Mouse(visible = False, newPos = (0,0))
+    
+    mouse = event.Mouse(visible = False, newPos = (0,0)) # hide the mouse during preview window + audio
     
     # mark trial onset for the eye-tracker
     
@@ -281,16 +298,19 @@ for trial in trials:
                 if mouse.getPressed()[0] == 0 and mouseIsDown:
                     mouseIsDown = False
                     break
+                    
     # log information about areas of interest
     # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
     # RECTANGLE <id> <left> <top> <right> <bottom> [label]
     # we need to know the size of the images and the size of the screen
     
+    print(positions[0][0])
+    
     if not dummy_mode:
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[0][0] - 512-0.5*189, positions[0][1] + 384 - 0.5*189, positions[0][0] + 512 +0.5*189, positions[0][1] + 384+0.5*189, trial["O1"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[1][0] - 512-0.5*189, positions[1][1] + 384 - 0.5*189, positions[1][0] + 512 +0.5*189, positions[1][1] + 384+0.5*189, trial["O2"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[2][0] - 512-0.5*189, positions[2][1] + 384 - 0.5*189, positions[2][0] + 512 +0.5*189, positions[2][1] + 384+0.5*189, trial["O3"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[3][0] - 512-0.5*189, positions[3][1] + 384 - 0.5*189, positions[3][0] + 512 +0.5*189, positions[3][1] + 384+0.5*189, trial["O4"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[0][0] + x_displacement - int(img_width/2), positions[0][1] + y_displacement - int(img_height/2), positions[0][0] + x_displacement +0.5*189, positions[0][1] + y_displacement + int(img_height/2), trial["O1"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[1][0] + x_displacement - int(img_width/2), positions[1][1] + y_displacement - int(img_height/2), positions[1][0] + x_displacement +0.5*189, positions[1][1] + y_displacement + int(img_height/2), trial["O2"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[2][0] + x_displacement - int(img_width/2), positions[2][1] + y_displacement - int(img_height/2), positions[2][0] + x_displacement +0.5*189, positions[2][1] + y_displacement + int(img_height/2), trial["O3"])
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[3][0] + x_displacement - int(img_width/2), positions[3][1] + y_displacement - int(img_height/2), positions[3][0] + x_displacement +0.5*189, positions[3][1] + y_displacement + int(img_height/2), trial["O4"])
         
     # we also want to send the actual images presented to DataViewer
     # (just for the sake of it)
