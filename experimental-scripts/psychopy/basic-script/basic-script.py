@@ -57,7 +57,7 @@ while ppt_number_taken:
 
 # To communicate with participants
 
-def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0.0, 0.0), color = "black"):
+def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0, 0), color = "black"):
     message_on_screen = visual.TextStim(win, text = "OK")
     message_on_screen.text    = message_text
     message_on_screen.height  = height
@@ -73,12 +73,14 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
 
 # Screen size
 
-win_width = 1920
-win_height = 1080
-win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0)) # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
 # more information on this issue here:
 # https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
 # https://github.com/psychopy/psychopy/issues/5937
+
+win_width = win.size[0]
+win_height = win.size[1]
 
 # Load stimuli
 
@@ -90,7 +92,7 @@ response_keys = ['s', 'h']
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
+dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
@@ -128,42 +130,44 @@ local_edf = os.path.join(results_folder, edf_file) # we call this at the end to 
 
 # Open .EDF file
 
-et_tracker.openDataFile(edf_file)
+if not dummy_mode:
+    et_tracker.openDataFile(edf_file)
 
 # Configure the tracker
 # Put the tracker in offline mode before changing the parameters
 
-et_tracker.setOfflineMode()
-pylink.pumpDelay(100)
-
-et_tracker.sendCommand("sample_rate 1000") 
-et_tracker.sendCommand("recording_parse_type = GAZE")
-et_tracker.sendCommand("select_parser_configuration 0")
-et_tracker.sendCommand("calibration_type = HV5")
-et_tracker.sendCommand("screen_pixel_coords = 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
-et_tracker.sendMessage("DISPLAY_COORDS 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
-
-# events to store
-
-file_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT'
-link_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT'
-
-# samples to store
-
-if et_version > 3:
-    file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT'
-    link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT'
-else:
-    file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,GAZERES,BUTTON,STATUS,INPUT'
-    link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT'
-et_tracker.sendCommand("file_event_filter = %s" % file_event_flags)
-et_tracker.sendCommand("file_sample_data = %s" % file_sample_flags)
-et_tracker.sendCommand("link_event_filter = %s" % link_event_flags)
-et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
-
-# Experiment starts
-# We first perform the calibration and validation
-# In this case, we are doing it without modifying the original set up (i.e., without customizing it)
+if not dummy_mode:
+    et_tracker.setOfflineMode()
+    pylink.pumpDelay(100)
+    
+    et_tracker.sendCommand("sample_rate 1000") 
+    et_tracker.sendCommand("recording_parse_type = GAZE")
+    et_tracker.sendCommand("select_parser_configuration 0")
+    et_tracker.sendCommand("calibration_type = HV5")
+    et_tracker.sendCommand("screen_pixel_coords = 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
+    et_tracker.sendMessage("DISPLAY_COORDS 0 0 %d %d" % (1920-1, 1080-1)) # this needs to be modified to the Display PC screen size you are using
+    
+    # events to store
+    
+    file_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT'
+    link_event_flags = 'LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT'
+    
+    # samples to store
+    
+    if et_version > 3:
+        file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT'
+        link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT'
+    else:
+        file_sample_flags = 'LEFT,RIGHT,GAZE,HREF,RAW,AREA,GAZERES,BUTTON,STATUS,INPUT'
+        link_sample_flags = 'LEFT,RIGHT,GAZE,GAZERES,AREA,STATUS,INPUT'
+    et_tracker.sendCommand("file_event_filter = %s" % file_event_flags)
+    et_tracker.sendCommand("file_sample_data = %s" % file_sample_flags)
+    et_tracker.sendCommand("link_event_filter = %s" % link_event_flags)
+    et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
+    
+    # Experiment starts
+    # We first perform the calibration and validation
+    # In this case, we are doing it without modifying the original set up (i.e., without customizing it)
 
 message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
 
@@ -175,28 +179,33 @@ if not dummy_mode:
 # 10 trials, iterate through the loop of faces
 
 trial_index = 0
+
 for i in range(10):
     trial_index += 1
     # load and create trial stimuli on the fly
     numpy.random.shuffle(faces)
     face_st = faces[i]
-    if face_st.startswith ('S'):
+    if face_st.startswith('S'):
         emotion = 'sad'
     else:
         emotion = 'happy'
-    image_stimuli = visual.ImageStim(win, image = face_st, pos = (0.0, -0.2))
+    
+    image_stimuli = visual.ImageStim(win, image = face_st, pos = (0, 0), units = 'pix') # NB pos coordinates are in pixels: Required by the Graphics Environment, for all units, (0,0) is the center
     image_stimuli.size/=6 # rescale
+    text_position_y = 0 - int(image_stimuli.size[1]/2) - int(50) 
+    print(text_position_y)
     text_stimuli = visual.TextStim(win, text = "Press 's' if the face is sad, 'h' if the face is happy",
-    pos = (0.0, 0.6), color = (0,0,0))
+    pos = (0, text_position_y), color = "black", units = 'pix') 
     
     # mark trial onset for the eye-tracker
     
-    et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
-    
-    # information to be shown in the host PC
-    # in this case, we want to know what trial we are recording
-    
-    et_tracker.sendCommand("record_status_message '%s'" % trial_index)
+    if not dummy_mode:
+        et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
+        
+        # information to be shown in the host PC
+        # in this case, we want to know what trial we are recording
+        
+        et_tracker.sendCommand("record_status_message '%s'" % trial_index)
     
     
     # every trial starts with a drift correction
@@ -204,10 +213,9 @@ for i in range(10):
     if not dummy_mode:
         et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
     
-    
     # start recording
-    et_tracker.setOfflineMode()
     if not dummy_mode:
+        et_tracker.setOfflineMode()
         et_tracker.startRecording(1, 1, 1, 1)
     
     # presentation of visual stimuli
@@ -216,8 +224,8 @@ for i in range(10):
     win.flip()
     
     # send trigger that images have been sent
-    
-    et_tracker.sendMessage('image_onset')
+    if not dummy_mode:
+        et_tracker.sendMessage('image_onset')
     
     resp = event.waitKeys(keyList = response_keys)
     
@@ -225,8 +233,9 @@ for i in range(10):
     # in this case, what specific stimuli was shown
     # and the emotion shown
     
-    et_tracker.sendMessage('!V TRIAL_VAR image %s' % face_st)
-    et_tracker.sendMessage('!V TRIAL_VAR emotion %s' % emotion)
+    if not dummy_mode:
+        et_tracker.sendMessage('!V TRIAL_VAR image %s' % face_st)
+        et_tracker.sendMessage('!V TRIAL_VAR emotion %s' % emotion)
     
     # stop recording
     if not dummy_mode:
