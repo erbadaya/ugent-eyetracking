@@ -211,6 +211,26 @@ for trial in trials:
     trial_index += 1
     print(trial_index)
     
+    # mark trial onset for the eye-tracker
+        
+    et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
+    
+    # information to be shown in the host PC
+    # in this case, we want to know what trial we are recording
+    
+    et_tracker.sendCommand("record_status_message '%s'" % trial_index)
+    
+    # every trial starts with a drift correction
+    # CHANGE X TO WHEREVER YOUR SENTENCE APPEARS
+     
+    if not dummy_mode:
+        et_tracker.doDriftCorrect(200, int(win_height/2), 1, 1)
+    
+    # start recording
+    et_tracker.setOfflineMode()
+    if not dummy_mode:
+        et_tracker.startRecording(1, 1, 1, 1)
+    
     # load the stimuli
     # in this experiment, we have five areas of interest
     # we are going to use the TextStim to present stimuli and boundingBox to get the width in pixels of each IA.ab
@@ -224,21 +244,22 @@ for trial in trials:
     ## FONT SIZE 
     ## AMOUNT OF SPACE UP AND DOWN FOR AREAS OF INTEREST
     
-    x_pos_start = -200
+    x_pos_start = -int(win_width/2) + 200
         
-    IA_1 = visual.TextStim(win, text = trial["IA_1"], units = 'pix', pos = (x_pos_start, 0), alignText = 'left')
+    IA_1 = visual.TextStim(win, text = trial["IA_1"], units = 'pix', pos = (x_pos_start, 0), alignText = 'left', anchorHoriz = 'left')
     IA_1_size = IA_1.boundingBox
     IA_2_posx = int(x_pos_start + int(IA_1_size[0]))
-    IA_2 = visual.TextStim(win, text = trial["IA_2"], units = 'pix', pos = (IA_2_posx, 0), alignText = 'left')
+    IA_2 = visual.TextStim(win, text = trial["IA_2"], units = 'pix', pos = (IA_2_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_2_size = IA_2.boundingBox
     IA_3_posx = int(x_pos_start + int(IA_1_size[0]) + int(IA_2_size[0]))
-    IA_3 = visual.TextStim(win, text = trial["IA_3"], units = 'pix', pos = (IA_3_posx, 0), alignText = 'left')
+    IA_3 = visual.TextStim(win, text = trial["IA_3"], units = 'pix', pos = (IA_3_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_3_size = IA_3.boundingBox
     IA_4_posx = int(x_pos_start + int(IA_1_size[0]) + int(IA_2_size[0]) + int(IA_3_size[0]))
-    IA_4 = visual.TextStim(win, text = trial["IA_4"], units = 'pix', pos = (IA_4_posx, 0), alignText = 'left')
+    IA_4 = visual.TextStim(win, text = trial["IA_4"], units = 'pix', pos = (IA_4_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_4_size = IA_4.boundingBox
     IA_5_posx = int(x_pos_start + int(IA_1_size[0]) + int(IA_2_size[0]) + int(IA_3_size[0]) + int(IA_4_size[0]))
-    IA_5 = visual.TextStim(win, text = trial["IA_5"], units = 'pix', pos = (IA_5_posx, 0), alignText = 'left')
+    IA_5 = visual.TextStim(win, text = trial["IA_5"], units = 'pix', pos = (IA_5_posx, 0), alignText = 'left', anchorHoriz = 'left')
+    IA_5_size = IA_5.boundingBox
     
     IA_1.draw()
     IA_2.draw()
@@ -247,16 +268,75 @@ for trial in trials:
     IA_5.draw()
     win.flip()
     
-    
-    
-    core.wait(5)
+    core.wait(1)
     
     ## SEND AREAS OF INTEREST 
     
+    # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
+    # RECTANGLE <id> <left> <top> <right> <bottom> [label]
+    # we need to know the size of the images and the size of the screen
+    
+    ## NOTE: YOU WILL HAVE TO ADD MORE/REMOVE DEPENDING ON HOW MANY ROIS YOUR EXPERIMENT HAS
+    ## NOTE: Adapt variable 'y_displacement' for adding margings to ROIs for text
+    
+    y_displacement = 10
+    
+    if not dummy_mode:
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (1, int(x_pos_start*-1), -IA_1_size[1]/2 + int(win_height/2) - y_displacement, IA_1.pos[0] + int(x_pos_start*-1) + IA_1_size[0], IA_1_size[1]/2 + int(win_height/2) + y_displacement, "IA1"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (2, IA_1.pos[0] + int(x_pos_start*-1) + IA_1_size[0], -IA_2_size[1]/2 + int(win_height/2) - y_displacement, IA_2.pos[0] + int(x_pos_start*-1) + IA_2_size[0], IA_2_size[1]/2 + int(win_height/2) + y_displacement, "IA2"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (3, IA_2.pos[0] + int(x_pos_start*-1) + IA_2_size[0], -IA_3_size[1]/2 + int(win_height/2) - y_displacement, IA_3.pos[0] + int(x_pos_start*-1) + IA_3_size[0], IA_3_size[1]/2 + int(win_height/2) + y_displacement, "IA3"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (4, IA_3.pos[0] + int(x_pos_start*-1) + IA_3_size[0], -IA_4_size[1]/2 + int(win_height/2) - y_displacement, IA_4.pos[0] + int(x_pos_start*-1) + IA_4_size[0], IA_4_size[1]/2 + int(win_height/2) + y_displacement, "IA4"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (5, IA_4.pos[0] + int(x_pos_start*-1) + IA_4_size[0], -IA_5_size[1]/2 + int(win_height/2) - y_displacement, IA_5.pos[0] + int(x_pos_start*-1) + IA_5_size[0], IA_5_size[1]/2 + int(win_height/2) + y_displacement, "IA5"))
+    
+    ## SEND TEXT TO TRACKER & FOR DATA ANALYSIS IN DATAVIEWER
+    
+    # imageBackdrop() ues the PIL module, wrks with all versions of EyeLink Host PC
+    # bitmapBackdrop() works with EyeLInk 1000 + and Portabele duo only & EyeLink Developers Kit 2.0 and up
+    # using the latter
+    
+    if not dummy_mode:
+        if not os.path.exists('screenshots'):
+            os.mkdir('screenshots')
+        screenshot = str(trial_index)+'.jpg'
+        win.getMovieFrame()
+        win.saveMovieFrames(screenshot)
+        scn_shot = os.path.join('screenshots', screenshot)
+        et_tracker.sendMessage('!V IMGLOAD FILL %s' % scn_shot)
+        
     
     ## SEND TRIAL-SPECIFIC INFORMATION
+    ## Note: you need to adapt this to the specifics of your experiment
     
+    if not dummy_mode:
+        et_tracker.sendMessage('!V TRIAL_VAR IA_1 %s' % trial["IA_1"])
+        et_tracker.sendMessage('!V TRIAL_VAR IA_2 %s' % trial["IA_2"])
+        et_tracker.sendMessage('!V TRIAL_VAR IA_3 %s' % trial["IA_3"])
+        et_tracker.sendMessage('!V TRIAL_VAR IA_4 %s' % trial["IA_4"])
+        pylink.pumpDelay(50) # adding a break to the et so we don't lose messages
+        et_tracker.sendMessage('!V TRIAL_VAR IA_5 %s' % trial["IA_5"])
+        et_tracker.sendMessage('!V TRIAL_VAR item %s' % trial["item"])
+        et_tracker.sendMessage('!V TRIAL_VAR condition %s' % trial["condition"])
+        et_tracker.sendMessage('!V TRIAL_VAR counterbalance %s' % trial["counterbalance"])
+        pylink.pumpDelay(50) # adding a break to the et so we don't lose messages
+        et_tracker.sendMessage('!V TRIAL_VAR type %s' % trial["type"])        
+        et_tracker.sendMessage('!V TRIAL_VAR identifier %s' % trial["identifier"])
     
+    if not dummy_mode:
+            pylink.pumpDelay(100)
+            et_tracker.stopRecording()
+            et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
         
     ThisExp.nextEntry()
     
+# End of experiment
+# save EDF file and close connection with the Host PC
+
+if not dummy_mode:
+    et_tracker.setOfflineMode()
+    pylink.pumpDelay(100)
+    et_tracker.closeDataFile()
+    et_tracker.receiveDataFile(edf_file, local_edf)
+    et_tracker.close()
+
+message("That's the end of the experiment. Press the spacebar to exit.")
+win.close()

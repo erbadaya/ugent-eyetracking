@@ -91,7 +91,9 @@ win = visual.Window(fullscr = True, checkTiming=False, color = "white", units = 
 # https://github.com/psychopy/psychopy/issues/5937
 
 win_width = win.size[0]
+print(win_width)
 win_height = win.size[1]
+print(win_height)
 
 # stimuli
 # in this case, we have a .xlsx file (os_conditions.xlsx) that has the combination of stimuli + information about conditions
@@ -106,7 +108,7 @@ trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
+dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
@@ -191,156 +193,145 @@ if not dummy_mode:
 trial_index = 0
 for trial in trials:
     
-    trial_index =+ 1
-    
-    print(trial)
-    
-    # all images should be the same, so we only need one
-    
-    dimensions = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = (0, 0), units = 'pix')
-    
-    img_width = dimensions.size[0]
-    img_height = dimensions.size[1]
-    
-    # positions
-    # defined as absolute values (i.e., stay in the same places regardless of monitor dimensions)
-    # the top right of the window has coordinates (1,1), the bottom left is (-1,-1)
-    # in a cross, it'd be: 0, 0.5 (top of the cross); 0.5, 0 (right of the cross); 0, -0.5 (bottom of the cross), -0.5, 0 (left of the cross)
-    # because of EyeLinkCoreGraphicsPsychoPy, this needs to be in _pixels_
-    
-    y_displacement = int((win_height/2)/2) # half of the screen is the top (+) and the bottom (-), since 0 is the center. we want the image to be presented in the middle of the top and the bottom half
-    x_displacement = int((win_width/2)/2)
-    
-    positions = [[0, 0 + y_displacement], [0 +  x_displacement, 0], [0, 0 - y_displacement], [0 - x_displacement , 0]] # NB you could also have this in your conditions file! It's just here for illustrative purposes
-    numpy.random.shuffle(positions)
-    
-    # images
-    
-    image_O1 = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = positions[0], units = 'pix')
-    image_O2 = visual.ImageStim(win, image = 'materials/images/' + trial["O2"], pos = positions[1], units = 'pix')
-    image_O3 = visual.ImageStim(win, image = 'materials/images/' + trial["O3"], pos = positions[2], units = 'pix')
-    image_O4 = visual.ImageStim(win, image = 'materials/images/' + trial["O4"], pos = positions[3], units = 'pix')
-    
-    #sound
-    # to send triggers for target onset, instead of measuring at what precise time it happens in an audio
-    # we have cut the audio in two, so the trigger is sent when the second audio (i.e., the target) is played
-    
-    carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"])
-    target_sound = sound.Sound('materials/audios/' + trial["target_audio"])
-    
-    image_O1.draw()
-    image_O2.draw()
-    image_O3.draw()
-    image_O4.draw()
-    
-    mouse = event.Mouse(visible = False, newPos = (0,0)) # hide the mouse during preview window + audio
-    
-    # mark trial onset for the eye-tracker
-    
-    et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
-    
-    # information to be shown in the host PC
-    # in this case, we want to know what trial we are recording
-    
-    et_tracker.sendCommand("record_status_message'%s'" % trial_index)
-    
-    # every trial starts with a drift correction
-    
-    if not dummy_mode:
-        et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
-    
-    
-    # start recording
-    et_tracker.setOfflineMode()
-    if not dummy_mode:
-        et_tracker.startRecording(1, 1, 1, 1)
-    
-    # presentation of visual stimuli
-    
-    win.flip()
-    print('show images')
-    # send trigger that images have been sent
-    et_tracker.sendMessage('image_onset')
-    
-    core.wait(1) # preview window
-    
-    # tracking mouse clicks
-    mouseIsDown = False
-    instructionPlayed = False 
-    targetPlayed = False
-    audioFinished = False
-    
-    # loop for audio
-    while True:
-            if instructionPlayed == False:
-                carrier_sound.play()
-                # send trigger audio onset
-                et_tracker.sendMessage('audio_onset')
-                print("audio onset")
-                clock.wait(carrier_sound.getDuration() )
-                carrier_sound.stop()
-                instructionPlayed = True
-            if instructionPlayed == True and targetPlayed == False:
-                target_sound.play()
-                # send trigger target onset
-                et_tracker.sendMessage('target_onset')
-                print("target onset")
-                clock.wait(target_sound.getDuration())
-                target_sound.stop()
-                # send trigger target offset
-                et_tracker.sendMessage('target_offset')
-                print("target offset")
-                targetPlayed = True
-            if targetPlayed == True and audioFinished == False:
-                mouse.setVisible(visible = True)
-                if mouse.getPressed()[0] == 1 and mouseIsDown == False:
-                    mouseIsDown = True
-                if mouse.getPressed()[0] == 0 and mouseIsDown:
-                    mouseIsDown = False
-                    break
-                    
-    # log information about areas of interest
-    # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
-    # RECTANGLE <id> <left> <top> <right> <bottom> [label]
-    # we need to know the size of the images and the size of the screen
-    
-    print(positions[0][0])
-    
-    if not dummy_mode:
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[0][0] + x_displacement - int(img_width/2), positions[0][1] + y_displacement - int(img_height/2), positions[0][0] + x_displacement +0.5*189, positions[0][1] + y_displacement + int(img_height/2), trial["O1"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[1][0] + x_displacement - int(img_width/2), positions[1][1] + y_displacement - int(img_height/2), positions[1][0] + x_displacement +0.5*189, positions[1][1] + y_displacement + int(img_height/2), trial["O2"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[2][0] + x_displacement - int(img_width/2), positions[2][1] + y_displacement - int(img_height/2), positions[2][0] + x_displacement +0.5*189, positions[2][1] + y_displacement + int(img_height/2), trial["O3"])
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %s" % positions[3][0] + x_displacement - int(img_width/2), positions[3][1] + y_displacement - int(img_height/2), positions[3][0] + x_displacement +0.5*189, positions[3][1] + y_displacement + int(img_height/2), trial["O4"])
-        
-    # we also want to send the actual images presented to DataViewer
-    # (just for the sake of it)
-    
-    
-    
-    # log information about this trial in the EDF file
-    if not dummy_mode:
-        et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
-        et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
-        et_tracker.sendMessage('!V TRIAL_VAR O1 %s' % trial["O1"])
-        et_tracker.sendMessage('!V TRIAL_VAR O1_pos %s %s' % positions[0])
-        et_tracker.sendMessage('!V TRIAL_VAR O2 %s' % trial["O2"])
-        et_tracker.sendMessage('!V TRIAL_VAR O2_pos %s %s' % positions[1])
-        et_tracker.sendMessage('!V TRIAL_VAR O3 %s' % trial["O3"])
-        et_tracker.sendMessage('!V TRIAL_VAR O3_pos %s %s' % positions[2])
-        et_tracker.sendMessage('!V TRIAL_VAR O4 %s' % trial["O4"])
-        et_tracker.sendMessage('!V TRIAL_VAR O4_pos %s %s' % positions[3])
-        et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
-        et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
-        et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
-        et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
-    
-    # stop recording
-    if not dummy_mode:
-        pylink.pumpDelay(100)
-        et_tracker.stopRecording()
-        et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
-    
     trial_index += 1
+    if trial_index <2 :
+        # mark trial onset for the eye-tracker
+        
+        et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
+        
+        # information to be shown in the host PC
+        # in this case, we want to know what trial we are recording
+        
+        et_tracker.sendCommand("record_status_message '%s'" % trial_index)
+        
+        # every trial starts with a drift correction
+        
+        if not dummy_mode:
+            et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
+        
+        # start recording
+        et_tracker.setOfflineMode()
+        if not dummy_mode:
+            et_tracker.startRecording(1, 1, 1, 1)
+        
+        # presentation of visual stimuli
+        
+         # all images should be the same, so we only need one
+        
+        dimensions = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = (0, 0), units = 'pix')
+        img_width = dimensions.size[0]
+        img_height = dimensions.size[1]
+        
+        # positions
+        # because of EyeLinkCoreGraphicsPsychoPy, this needs to be in _pixels_
+        
+        y_displacement = int((win_height/2)/2) # half of the screen is the top (+) and the bottom (-), since 0 is the center. we want the image to be presented in the middle of the top and the bottom half
+        x_displacement = int((win_width/2)/2)
+        
+        positions = [[0, 0 + y_displacement], [0 +  x_displacement, 0], [0, 0 - y_displacement], [0 - x_displacement , 0]] # NB you could also have this in your conditions file! It's just here for illustrative purposes
+        numpy.random.shuffle(positions)
+        
+        # images
+        
+        image_O1 = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = positions[0], units = 'pix')
+        print(image_O1.pos)
+        image_O2 = visual.ImageStim(win, image = 'materials/images/' + trial["O2"], pos = positions[1], units = 'pix')
+        image_O3 = visual.ImageStim(win, image = 'materials/images/' + trial["O3"], pos = positions[2], units = 'pix')
+        image_O4 = visual.ImageStim(win, image = 'materials/images/' + trial["O4"], pos = positions[3], units = 'pix')
+        
+        #sound
+        # to send triggers for target onset, instead of measuring at what precise time it happens in an audio
+        # we have cut the audio in two, so the trigger is sent when the second audio (i.e., the target) is played
+        
+        carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"])
+        target_sound = sound.Sound('materials/audios/' + trial["target_audio"])
+        
+        image_O1.draw()
+        image_O2.draw()
+        image_O3.draw()
+        image_O4.draw()
+        
+        mouse = event.Mouse(visible = False, newPos = (0,0)) # hide the mouse during preview window + audio
+        
+        win.flip()
+        print('show images')
+        # send trigger that images have been sent
+        et_tracker.sendMessage('image_onset')
+        
+        core.wait(1) # preview window
+        
+        # tracking mouse clicks
+        mouseIsDown = False
+        instructionPlayed = False 
+        targetPlayed = False
+        audioFinished = False
+        
+        # loop for audio
+        while True:
+                if instructionPlayed == False:
+                    carrier_sound.play()
+                    # send trigger audio onset
+                    et_tracker.sendMessage('audio_onset')
+                    print("audio onset")
+                    clock.wait(carrier_sound.getDuration() )
+                    carrier_sound.stop()
+                    instructionPlayed = True
+                if instructionPlayed == True and targetPlayed == False:
+                    target_sound.play()
+                    # send trigger target onset
+                    et_tracker.sendMessage('target_onset')
+                    print("target onset")
+                    clock.wait(target_sound.getDuration())
+                    target_sound.stop()
+                    # send trigger target offset
+                    et_tracker.sendMessage('target_offset')
+                    print("target offset")
+                    targetPlayed = True
+                    mouse = event.Mouse(visible = False, newPos = (0,0)) 
+                if targetPlayed == True and audioFinished == False:
+                    mouse.setVisible(visible = True)
+                    if mouse.getPressed()[0] == 1 and mouseIsDown == False:
+                        mouseIsDown = True
+                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
+                    if mouse.getPressed()[0] == 0 and mouseIsDown:
+                        mouseIsDown = False
+                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
+                        break
+                        
+        # log information about areas of interest
+        # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
+        # RECTANGLE <id> <left> <top> <right> <bottom> [label]
+        # we need to know the size of the images and the size of the screen
+        
+        if not dummy_mode:
+            et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (1, int(positions[0][0]) + int(win_width/2) - int(img_width/2), int(positions[0][1]) + int(win_height/2) - int(img_height/2), int(positions[0][0]) + int(win_width/2) +int(img_width/2), int(positions[0][1]) + int(win_height/2) + int(img_height/2), trial["O1_type"]))
+            et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (2, int(positions[1][0]) + int(win_width/2) - int(img_width/2), int(positions[1][1]) + int(win_height/2) - int(img_height/2), int(positions[1][0]) + int(win_width/2) +int(img_width/2), int(positions[1][1]) + int(win_height/2) + int(img_height/2), trial["O2_type"]))
+            et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (3, int(positions[2][0]) + int(win_width/2) - int(img_width/2), int(positions[2][1]) + int(win_height/2) - int(img_height/2), int(positions[2][0]) + int(win_width/2) +int(img_width/2), int(positions[2][1]) + int(win_height/2) + int(img_height/2), trial["O3_type"]))
+            et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (4, int(positions[3][0]) + int(win_width/2) - int(img_width/2), int(positions[3][1]) + int(win_height/2) - int(img_height/2), int(positions[3][0]) + int(win_width/2) +int(img_width/2), int(positions[3][1]) + int(win_height/2)  + int(img_height/2), trial["O4_type"]))
+            
+            
+        # we also want to send the actual images presented to DataViewer
+        # (just for the sake of it)
+        
+        
+        
+        # log information about this trial in the EDF file
+        if not dummy_mode:
+            et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
+            et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
+            pylink.pumpDelay(50) # adding a break to the et so we don't lose messages
+            et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
+            et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
+            et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
+            et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
+        
+        # stop recording
+        if not dummy_mode:
+            pylink.pumpDelay(100)
+            et_tracker.stopRecording()
+            et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
+    else:
+        pass
 
 # End of experiment
 # save EDF file and close connection with the Host PC
