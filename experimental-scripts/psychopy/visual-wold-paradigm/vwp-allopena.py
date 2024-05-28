@@ -51,17 +51,15 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 
 # Participant data
 
-info = {"Participant number":0, "EDF_name":"0"}
+info = {"Participant number":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
 while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
-    edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
-    
-    behavioural_file = '/subject_' + ppt_number + '.txt'
-    edf_file = edf_name + '.edf' # remember to add the .edf extension
+    behavioural_file = './subject_' + ppt_number + '.txt'
+    edf_file = ppt_number + '.edf' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
@@ -104,6 +102,8 @@ print(win_height)
 
 trial_list = data.importConditions('os_conditions.xlsx') 
 trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
+ThisExp = data.ExperimentHandler(dataFileName = behavioural_file, extraInfo = info)
+ThisExp.addLoop(trials)
 
 # Open connection to the Host PC
 # Here we create dummy_mode
@@ -194,7 +194,7 @@ trial_index = 0
 for trial in trials:
     
     trial_index += 1
-    if trial_index <2 :
+    if trial_index <4 :
         # mark trial onset for the eye-tracker
         
         et_tracker.sendMessage('TRIALID %d' % trial_index) # TRIALID is the 'trigger' that DataViewer uses to segment trials
@@ -313,7 +313,12 @@ for trial in trials:
         # we also want to send the actual images presented to DataViewer
         # (just for the sake of it)
         
-        
+        if not dummy_mode:
+            screenshot = str(trial_index)+'.png'
+            scn_shot = os.path.join(results_folder, screenshot)
+            win.getMovieFrame()
+            win.saveMovieFrames(scn_shot)
+            et_tracker.sendMessage('!V IMGLOAD FILL %s' % screenshot)
         
         # log information about this trial in the EDF file
         if not dummy_mode:
@@ -330,6 +335,7 @@ for trial in trials:
             pylink.pumpDelay(100)
             et_tracker.stopRecording()
             et_tracker.sendMessage("TRIAL_RESULT %d" % pylink.TRIAL_OK) # used by DataViewer to segment the data
+        ThisExp.nextEntry()
     else:
         pass
 

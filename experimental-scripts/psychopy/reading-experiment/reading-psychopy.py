@@ -50,17 +50,16 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 
 # Participant data
 
-info = {"Participant number":0, "EDF_name":""}
+info = {"Participant number":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
 while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
-    edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
     
-    behavioural_file = '/subject_' + ppt_number + '.txt'
-    edf_file = edf_name + '.EDF' # remember to add the .edf extension
+    behavioural_file = './behavioural/subject_' + ppt_number + '.txt'
+    edf_file = ppt_number + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
@@ -99,7 +98,7 @@ win_height = win.size[1]
 # check section 7.3 to follow this bit of code
 # https://docs.google.com/document/d/1bKIGYGZBmMxaqWgj31S55b8RhHIy8kqqMStaU7Ku7Vg/edit
 
-ThisExp = data.ExperimentHandler(dataFileName = 'test.csv', extraInfo = info)
+ThisExp = data.ExperimentHandler(dataFileName = behavioural_file, extraInfo = info)
 TrialList = data.importConditions('reading-psychopy.xlsx') 
 trials = data.TrialHandler(TrialList, nReps = 1, method = 'random')
 ThisExp.addLoop(trials)
@@ -107,7 +106,7 @@ ThisExp.addLoop(trials)
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
+dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
@@ -138,7 +137,7 @@ if not dummy_mode:
 
 # To save .edf files
 
-results_folder = 'et_results'
+results_folder = 'et_results/pp' + ppt_number
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from Host to Presentation PC
@@ -240,20 +239,25 @@ for trial in trials:
     # the height should be the font size (in pixels) + some pixels for margin
 
     ### PARAMETERS TO SET YOURSELF
-    ### WHERE TEXT STARTS (x coordinate, here set to -200), NB THIS IS ALSO WHERE THE DRIFT CORRECTION IS SHOWN
+    ### WHERE TEXT STARTS (x coordinate, here set to 200 from the start of the left side), NB THIS IS ALSO WHERE THE DRIFT CORRECTION IS SHOWN
     ## FONT SIZE 
     ## AMOUNT OF SPACE UP AND DOWN FOR AREAS OF INTEREST
     
     x_pos_start = -int(win_width/2) + 200
+    
+    
         
     IA_1 = visual.TextStim(win, text = trial["IA_1"], units = 'pix', pos = (x_pos_start, 0), alignText = 'left', anchorHoriz = 'left')
     IA_1_size = IA_1.boundingBox
+    print(IA_1_size)
     IA_2_posx = int(x_pos_start + int(IA_1_size[0]))
     IA_2 = visual.TextStim(win, text = trial["IA_2"], units = 'pix', pos = (IA_2_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_2_size = IA_2.boundingBox
     IA_3_posx = int(x_pos_start + int(IA_1_size[0]) + int(IA_2_size[0]))
     IA_3 = visual.TextStim(win, text = trial["IA_3"], units = 'pix', pos = (IA_3_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_3_size = IA_3.boundingBox
+    print(IA_3_posx)
+    print(IA_3.pos[0])
     IA_4_posx = int(x_pos_start + int(IA_1_size[0]) + int(IA_2_size[0]) + int(IA_3_size[0]))
     IA_4 = visual.TextStim(win, text = trial["IA_4"], units = 'pix', pos = (IA_4_posx, 0), alignText = 'left', anchorHoriz = 'left')
     IA_4_size = IA_4.boundingBox
@@ -268,7 +272,7 @@ for trial in trials:
     IA_5.draw()
     win.flip()
     
-    core.wait(1)
+    core.wait(0.5)
     
     ## SEND AREAS OF INTEREST 
     
@@ -282,11 +286,11 @@ for trial in trials:
     y_displacement = 10
     
     if not dummy_mode:
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (1, int(x_pos_start*-1), -IA_1_size[1]/2 + int(win_height/2) - y_displacement, IA_1.pos[0] + int(x_pos_start*-1) + IA_1_size[0], IA_1_size[1]/2 + int(win_height/2) + y_displacement, "IA1"))
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (2, IA_1.pos[0] + int(x_pos_start*-1) + IA_1_size[0], -IA_2_size[1]/2 + int(win_height/2) - y_displacement, IA_2.pos[0] + int(x_pos_start*-1) + IA_2_size[0], IA_2_size[1]/2 + int(win_height/2) + y_displacement, "IA2"))
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (3, IA_2.pos[0] + int(x_pos_start*-1) + IA_2_size[0], -IA_3_size[1]/2 + int(win_height/2) - y_displacement, IA_3.pos[0] + int(x_pos_start*-1) + IA_3_size[0], IA_3_size[1]/2 + int(win_height/2) + y_displacement, "IA3"))
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (4, IA_3.pos[0] + int(x_pos_start*-1) + IA_3_size[0], -IA_4_size[1]/2 + int(win_height/2) - y_displacement, IA_4.pos[0] + int(x_pos_start*-1) + IA_4_size[0], IA_4_size[1]/2 + int(win_height/2) + y_displacement, "IA4"))
-        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (5, IA_4.pos[0] + int(x_pos_start*-1) + IA_4_size[0], -IA_5_size[1]/2 + int(win_height/2) - y_displacement, IA_5.pos[0] + int(x_pos_start*-1) + IA_5_size[0], IA_5_size[1]/2 + int(win_height/2) + y_displacement, "IA5"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (1, 200, -IA_1_size[1]/2 + int(win_height/2) - y_displacement, 200 + IA_1_size[0], IA_1_size[1]/2 + int(win_height/2) + y_displacement, "IA1"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (2, 200 + IA_1_size[0] , -IA_2_size[1]/2 + int(win_height/2) - y_displacement, 200 + IA_1_size[0] + IA_2_size[0], IA_2_size[1]/2 + int(win_height/2) + y_displacement, "IA2"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (3, 200 + IA_1_size[0] + IA_2_size[0], -IA_3_size[1]/2 + int(win_height/2) - y_displacement, 200 + IA_1_size[0] + IA_2_size[0] + IA_3_size[0], IA_3_size[1]/2 + int(win_height/2) + y_displacement, "IA3"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (4, 200 + IA_1_size[0] + IA_2_size[0] + IA_3_size[0], -IA_4_size[1]/2 + int(win_height/2) - y_displacement, 200 + IA_1_size[0] + IA_2_size[0] + IA_3_size[0] + IA_4_size[0], IA_4_size[1]/2 + int(win_height/2) + y_displacement, "IA4"))
+        et_tracker.sendMessage("!V IAREA RECTANGLE %d %d %d %d %d %s" % (5, 200 + IA_1_size[0] + IA_2_size[0] + IA_3_size[0] + IA_4_size[0], -IA_5_size[1]/2 + int(win_height/2) - y_displacement, 200 + IA_1_size[0] + IA_2_size[0] + IA_3_size[0] + IA_4_size[0] + IA_5_size[0], IA_5_size[1]/2 + int(win_height/2) + y_displacement, "IA5"))
     
     ## SEND TEXT TO TRACKER & FOR DATA ANALYSIS IN DATAVIEWER
     
@@ -294,14 +298,13 @@ for trial in trials:
     # bitmapBackdrop() works with EyeLInk 1000 + and Portabele duo only & EyeLink Developers Kit 2.0 and up
     # using the latter
     
+    
     if not dummy_mode:
-        if not os.path.exists('screenshots'):
-            os.mkdir('screenshots')
-        screenshot = str(trial_index)+'.jpg'
+        screenshot = str(trial_index)+'.png'
+        scn_shot = os.path.join(results_folder, screenshot)
         win.getMovieFrame()
-        win.saveMovieFrames(screenshot)
-        scn_shot = os.path.join('screenshots', screenshot)
-        et_tracker.sendMessage('!V IMGLOAD FILL %s' % scn_shot)
+        win.saveMovieFrames(scn_shot)
+        et_tracker.sendMessage('!V IMGLOAD FILL %s' % screenshot)
         
     
     ## SEND TRIAL-SPECIFIC INFORMATION

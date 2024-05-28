@@ -92,7 +92,7 @@ response_keys = ['s', 'h']
 # Open connection to the Host PC
 # Here we create dummy_mode
 
-dummy_mode = True # assuming we are piloting in our machine, set to False when using the tracker
+dummy_mode = False # assuming we are piloting in our machine, set to False when using the tracker
 
 if dummy_mode:
     et_tracker = pylink.EyeLink(None)
