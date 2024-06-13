@@ -96,11 +96,11 @@ exp.pygaze_eyetracker.log('preview_window')
 After 1000, we will present the instructions. We want to mark three events in our eye tracking data: When audio starts, when our target starts, and when our target ends. In this code, we have worked around this issue by recording the sentence in its enterity, and then splicing it into two audios, with triggers being sent around them. Other researchers may prefer to have the audio play in its enterity, and time when each part occurs within the sound file, and send the trigger when that time is met. When splicing audios you need to be consistent (e.g., do not take the space between the word prior to the target noun as part of the noun soundfile) and ensure that the cut is not noticeable (e.g., do not cut after the first phoneme has began). Besides this, no way is better than the other: I have coded it this way because I prefer spending more time preparing the audios than ensuring that times are correct.
 
 Therefore, the script now has:
-        - One inline script
-        - One audio
-        - One inline script
-        - One audio
-        - One inline script
+  - One inline script
+  - One audio
+  - One inline script
+  - One audio
+  - One inline script
 
 In the inline script, we are using the function `pygaze_eyetracker.log()` to send our triggers. Note that we write `exp.` before the function, and the text for the trigger within quotation marks. When sending triggers, make them consistent: 
 
@@ -122,6 +122,7 @@ For sending areas of interest we need a bit of coding in Python. We need to tell
 exp.pygaze_eyetracker.log('!V IAREA RECTANGLE {0} {1} {2} {3} {4} {5}'.format(index+1, coords[0], coords[1], coords[2], coords[3], region))
 ```
 Where:
+
     - 0 is the index of the area of interest. In this case we have four areas of interest.
     - 1, 2, 3 and 4 refer to the left-center, top-center, right-center, and bottom-center points of our Area of Interest
     - 5 is the region (or label) of this Area of Interest
