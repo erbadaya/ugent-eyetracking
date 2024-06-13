@@ -177,6 +177,7 @@ if not dummy_mode:
     et_tracker.doTrackerSetup()
 
 # 10 trials, iterate through the loop of faces
+message("The experiment will start now. Press the spacebar to continue.")
 
 trial_index = 0
 

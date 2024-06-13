@@ -202,7 +202,7 @@ if not dummy_mode:
     pylink.openGraphicsEx(genv)
     et_tracker.doTrackerSetup()
 
-
+message("The experiment will start now. Press the spacebar to continue.")
 trial_index = 0
 
 for trial in trials:
