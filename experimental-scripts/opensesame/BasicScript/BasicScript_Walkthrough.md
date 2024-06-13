@@ -21,20 +21,6 @@ This is a mock experiment where participants are shown faces and they have to sa
   - Stop recording
 - A goodbye screen
 
-# The eye-tracking components
-
-1. At the beginning of the experiment
-
-Start the experiment:
-We want a calibration & validation procedure
-
-2. During the experiment
-
-We want every trial to start with a drift correction
-We want to see in the Host PC what trial number we are recording (done automatically by OS)
-We want to start and stop the recording in every trial
-We want to save the variable of emotion and the image presented
-
 # The experiment code
 
 1. Welcome screen
