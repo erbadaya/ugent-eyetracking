@@ -216,11 +216,8 @@ for trial in trials:
         
         # presentation of visual stimuli
         
-         # all images should be the same, so we only need one
-        
-        dimensions = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = (0, 0), units = 'pix')
-        img_width = dimensions.size[0]
-        img_height = dimensions.size[1]
+        img_width = 189
+        img_height = 189
         
         # positions
         # because of EyeLinkCoreGraphicsPsychoPy, this needs to be in _pixels_
@@ -258,7 +255,7 @@ for trial in trials:
         # send trigger that images have been sent
         et_tracker.sendMessage('image_onset')
         
-        core.wait(1) # preview window
+        core.wait(2) # preview window
         
         # tracking mouse clicks
         mouseIsDown = False
