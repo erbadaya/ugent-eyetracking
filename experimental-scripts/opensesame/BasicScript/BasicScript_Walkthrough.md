@@ -51,13 +51,14 @@ We present our stimuli on a canvas and gather responses with a keyboard.
 
 4.4. Log in variables in the .edf file
 
-At the end of the experiment, we are going to log all experimental variables in the eye-tracking data with the plugin ![](images/pluginlog.JPG). For the time being, we are going to log all of them (select 'Automatically log all variables'). Note that, in reality, you should not do this as this will impact your intertrial interval.
+At the end of the experiment, we are going to log all experimental variables in the eye-tracking data with the plugin ![](images/pluginlog.JPG). Note that although you could automatically log all variables (by selecting this option), it is not recommendable: First, because you will save unnecessary information and secondly - and most importantly - because it can disrupt your intertrial interval: Logging in _all_ variables creates a delay. Therefore, you should write only record those variables that are of interest for you by using the script in this plugin and the following syntax: ```
+!V TRIAL_VAR variable [variable]```, where the variable within brackets is the name of the variable in the experiment, and the variable outside is the name with which we want to save it in the eye-tracking data. 
 
 4.5. Log in variables in the .csv file
 
 We also want to save all the trial information in the behavioural file (the .csv file). We do this with the logger component.
 
-4.6. Stop  the recording
+4.6. Stop the recording
 
 After that, we are going to stop the recording with the plugin ![](images/pluginstop.JPG). This will segment the data to mark when the trial ended. We do it by adding the pygaze stop recording plugin.
 
