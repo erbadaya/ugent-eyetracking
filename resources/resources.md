@@ -18,9 +18,3 @@
 [CHAP](https://in.bgu.ac.il/en/Labs/CNL/chap/default.aspx)
 [ScanMatch](https://seis.bristol.ac.uk/~psidg/ScanMatch/)
 
-## Analysis
-
-### R
-
-
-### Python
