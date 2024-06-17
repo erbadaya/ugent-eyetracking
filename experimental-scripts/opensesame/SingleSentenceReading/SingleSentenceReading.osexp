@@ -330,6 +330,10 @@ define inline_script read_sentence_sizes
 	part5_top = 540 + h5
 	part5_bottom = 540 - h5
 	
+	# show the text
+	
+	reading_canvas.show()
+	
 	# record the IAs for the eye tracker
 	# IAs go right-side top left-side bottom
 	
@@ -338,9 +342,6 @@ define inline_script read_sentence_sizes
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 3 {0} {1} {2} {3} PART3'.format(part3_right,part3_top,part3_left,part3_bottom))
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 4 {0} {1} {2} {3} PART4'.format(part4_right,part4_top,part4_left,part4_bottom))
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 5 {0} {1} {2} {3} PART5'.format(part5_right,part5_top,part5_left,part5_bottom))
-	
-	# show the text
-	reading_canvas.show()
 	
 	# get a picture for backdrop
 	
@@ -440,6 +441,10 @@ define inline_script read_sentence_sizes_2
 	part5_top = 540 + h5
 	part5_bottom = 540 - h5
 	
+	# show the text
+	
+	reading_canvas.show()
+	
 	# record the IAs for the eye tracker
 	# IAs go right-side top left-side bottom
 	
@@ -448,9 +453,6 @@ define inline_script read_sentence_sizes_2
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 3 {0} {1} {2} {3} PART3'.format(part3_right,part3_top,part3_left,part3_bottom))
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 4 {0} {1} {2} {3} PART4'.format(part4_right,part4_top,part4_left,part4_bottom))
 	exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 5 {0} {1} {2} {3} PART5'.format(part5_right,part5_top,part5_left,part5_bottom))
-	
-	# show the text
-	reading_canvas.show()
 	
 	# get a picture for backdrop
 	
