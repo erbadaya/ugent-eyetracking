@@ -196,6 +196,14 @@ exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 4 {0} {1} {2} {3} PART4
 exp.experiment.pygaze_eyetracker.log('!V IAREA RECTANGLE 5 {0} {1} {2} {3} PART5'.format(part5_right,part5_top,part5_left,part5_bottom))
 ```
 
+<details>
+<summary>Isn't all this code a bit repetitive?</summary>
+<br>
+Yes it is! You could instead create a function (in the import module inline script) and call it here (something similar is done in the Visual World Paradigm examples) and then call the function in inline script inside the trial sequence (inside a loop, one per area of interest). 
+
+The important part in that script is: How do you update the starting position of each area of interest? 
+</details>
+
 The next steps of the code will help us save the trial screenshot and send it to the .edf for later pre-processing (e.g., you may want to correct fixations vertically/horizontally, or check whether fixations where on particular areas of interest, and this is easier done if you can see the text on the software).
 
 For doing this, we are going to use the functions ```getMovieFrame()``` and  ```moveFrames[].save()```. Note that these functions work on a ```window``` object that is from PsychoPy: Therefore, your experiment needs to run on PsychoPy (i.e., in the experiment first tab).
