@@ -181,12 +181,13 @@ Technically, this is it for sending areas of interest. There is, however, two po
 <details>
 <summary>How can I make this more efficiently?</summary>
 <br>
-Not that there is a problem with the code above, but it's clearly _a lot_ of code. Instead of doing the calculations area per area, and then feeding them into the formula, you could wrap this in a function.
+
+There isn't a problem with the code above, but it's clearly _a lot_ of code. Instead of doing the calculations manually area per area, and then feeding them into the formula, you could wrap this in a function.
 
 ```
 def write_tracker(index):
-	poslist = [(-190, 0), (0, 190), (190, 0),(0, -190)]
-	areas = ["left", "CB", "right", "CT"]
+	poslist = [(-190, 0), (0, 190), (190, 0),(0, -190)] # the position of our stimuli
+	areas = ["left", "bottom", "right", "top"] # the areas of the stimuli
 	pos = poslist[index]
 
 	## remember the problem we with defining IA in the eye tracker. eye tracker origin is in the top left
@@ -206,9 +207,7 @@ for i in range(4):
 	write_tracker(i)
 ```
 
-You would be doing the same as above, but with fewer lines! How does this work?
-
-```for i in range(4)``` iterates through a list of 0, 1, 2, and 3. Each number is fed into our ```write_tracker()```: Per each index, an area of interest is sent to the tracker. As before, we are not dynamically updating the region tag (i.e., it still refers to location in space, as opposed to the stimuli presented there). 
+You would be doing the same as above, but with fewer lines! 
 
 </details>
 
