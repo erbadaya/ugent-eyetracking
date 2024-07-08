@@ -177,8 +177,6 @@ Technically, this is it for sending areas of interest. There is, however, two po
 
 - Our syntax also sends a label. In this case, the label refers to where on the screen the area of interest is (i.e., top, right, bottom, left). However, when for analysis, what we need to know is _what was shown in each area_. We are saving that information in the file, but this code entails that we will need to re-assign areas of interest during data pre-processing: You will need to know what was shown in each position (e.g., referent, distractor) and create a new column for fixations to objects as opposed to locations on the screen. Since this script is less heavy on Python, we went for this approach, but if you're interested in how to put labels dynamically, have a look at how it's done in the VWPAllopenaPy.os.
 
-Let's calculate where the TC position is on the screen to calculate its coordinates. 0,0 for OS is 512, 384  for our tracker for a screen resolution of 1024 x 768 (if you are running on a different resolution, you will need to change these values!). On OS coordinates, , top center position equates to 0, -190. To obtain the left center, top center, right center and bottom center margins of our picture given this coordinates for the tracker, we use the following formula:
-
 
 <details>
 <summary>How can I make this more efficiently?</summary>
@@ -228,7 +226,7 @@ We also want to save all the trial information in the behavioural file (the .csv
 
 At the end of each trial, we stop recording eye-tracking data![](images/pluginstop.JPG). This will segment the data to mark when the trial ended. We do it by adding the pygaze stop recording plugin.
 
-5. At the end of our experiment, we show participants a good bye screen.
+1. At the end of our experiment, we show participants a good bye screen.
   
 
 And that's it!
