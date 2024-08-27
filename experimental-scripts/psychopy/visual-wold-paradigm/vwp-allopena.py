@@ -40,7 +40,7 @@
 # without the need of the eye-tracker
 # we will do that via the variable dummy_mode
 
-# Last update: 26/08/2024
+# Last update: 27/08/2024
 
 # Libraries
 
@@ -60,20 +60,9 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 
 dummy_mode = True
 
-# Create screen
-# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
-
-win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
-# more information on this issue here:
-# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
-# https://github.com/psychopy/psychopy/issues/5937
-
-win_width = win.size[0]
-win_height = win.size[1]
-
 # Get participant data
 
-info = {"Participant number":0, "EDF_name":""}
+info = {"Participant number": "", "EDF_name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
@@ -120,6 +109,19 @@ trial_list = data.importConditions('os_conditions.xlsx')
 trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 ThisExp = data.ExperimentHandler(dataFileName = behavioural_file, extraInfo = info)
 ThisExp.addLoop(trials)
+
+# Create screen
+# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
+# In this case, we are setting the background color to white
+
+win = visual.Window(fullscr = True, checkTiming=False, color = (1, 1, 1), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+
+# more information on this issue here:
+# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
+# https://github.com/psychopy/psychopy/issues/5937
+
+win_width = win.size[0]
+win_height = win.size[1]
 
 # Start of the experiment
 # 1. Open the connection to the ET PC
@@ -195,12 +197,16 @@ if not dummy_mode:
 
 # 4. Calibration and validation
 
-# In this example, we are not customising the calibration and validation
+# In this example, we are customising the calibration and validation
+# We are setting the background to white, to match our stimuli and the background of the experiment in general
 
 message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
 
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
+    foreground_color = (-1, -1, -1)
+    background_color = win.color
+    genv.setCalibrationColors(foreground_color, background_color)
     pylink.openGraphicsEx(genv)
     et_tracker.doTrackerSetup()
 
@@ -241,8 +247,10 @@ for trial in trials:
     # to send triggers for target onset, instead of measuring at what precise time it happens in an audio
     # we have cut the audio in two, so the trigger is sent when the second audio (i.e., the target) is played
     
-    carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"])
-    target_sound = sound.Sound('materials/audios/' + trial["target_audio"])
+    carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"],
+                                      stereo = True)
+    target_sound = sound.Sound('materials/audios/' + trial["target_audio"],
+                                      stereo = True)
 
 
     # Mark the beginning of the trial
@@ -257,7 +265,8 @@ for trial in trials:
     et_tracker.sendCommand("record_status_message '%s'" % status_msg)
     
     # Perform drift correction (drift check)
-    et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
+    if not dummy_mode:
+        et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
         
     # Start recording
     # arguments: sample_to_file, events_to_file, sample_over_link,

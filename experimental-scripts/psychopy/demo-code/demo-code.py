@@ -6,7 +6,7 @@
 # There is no experimental task in this script
 # The objective is to see the sequence in which commands are sent to the tracker
 
-# Last updated: 26/08/2024
+# Last updated: 27/08/2024
 
 # Before the experiment
 # Load libraryes
@@ -20,22 +20,11 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # for calibr
 # We will use this variable in a series of if-else statements everytime there would be a line of code calling the tracker
 # We will change it to 'False' when running the experiment in the lab
 
-dummy_mode = True
-
-# Create screen
-# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
-
-win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
-# more information on this issue here:
-# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
-# https://github.com/psychopy/psychopy/issues/5937
-
-win_width = win.size[0]
-win_height = win.size[1]
+dummy_mode = False
 
 # Get participant data
 
-info = {"Participant number":0, "EDF_name":""}
+info = {"Participant number": "", "EDF_name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
@@ -55,6 +44,18 @@ results_folder = 'et_results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from ET PC to STIM PC
+
+# Create screen
+# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
+
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+# more information on this issue here:
+# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
+# https://github.com/psychopy/psychopy/issues/5937
+
+win_width = win.size[0]
+win_height = win.size[1]
+
 
 # Start of the experiment
 # 1. Open the connection to the ET PC

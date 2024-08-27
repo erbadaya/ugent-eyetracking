@@ -33,11 +33,11 @@
 # without the need of the eye-tracker
 # we will do that via the variable dummy_mode
 
-# Last update: 26/08/2024
+# Last update: 27/08/2024
 
 # Libraries
 
-from psychopy import gui, visual, event, logging
+from psychopy import gui, visual, event, logging, data, core
 import time, os, numpy
 
 # eye-tracking libraries
@@ -48,19 +48,11 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 # We will use this variable in a series of if-else statements everytime there would be a line of code calling the tracker
 # We will change it to 'False' when running the experiment in the lab
 
-dummy_mode = True
-
-# Create screen
-# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
-
-win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
-# more information on this issue here:
-# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
-# https://github.com/psychopy/psychopy/issues/5937
+dummy_mode = False
 
 # Participant data
 
-info = {"Participant number":0, "EDF_name":""}
+info = {"Participant number": "", "EDF_name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
@@ -103,12 +95,20 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
 
 ThisExp = data.ExperimentHandler(dataFileName = behavioural_file, extraInfo = info)
 TrialList = data.importConditions('basicscript_conditions.xlsx') 
-trials = data.TrialHandler(TrialList, nReps = 0.5, method = 'random') # we only want 10 trials, not 20
+trials = data.TrialHandler(TrialList, nReps = 1, method = 'random') # we only want 10 trials, not 20
 ThisExp.addLoop(trials)
 
 # Define response keys
 
 response_keys = ['s', 'h']
+
+# Create screen
+# You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
+
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
+# more information on this issue here:
+# https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
+# https://github.com/psychopy/psychopy/issues/5937
 
 # Start of the experiment
 # 1. Open the connection to the ET PC
@@ -203,6 +203,10 @@ trial_index = 0
 
 for trial in trials:
     trial_index += 1
+    
+    # hide mouse
+    
+    mouse = event.Mouse(visible = False) 
 
     # Load the images to display
 
