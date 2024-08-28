@@ -271,7 +271,7 @@ for trial in trials:
             # Stop stimulus presentation when the spacebar is pressed
             if keycode == 'h' or keycode == 's':
                 # send over a message to log the key press
-                el_tracker.sendMessage('key_pressed')
+                et_tracker.sendMessage('key_pressed')
                 # get response time in ms, PsychoPy report time in sec
                 RT = int((core.getTime() - img_onset_time)*1000)
                 get_keypress = True
