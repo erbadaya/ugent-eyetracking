@@ -253,11 +253,29 @@ for trial in trials:
     # send trigger that images have been sent
     if not dummy_mode:
         et_tracker.sendMessage('image_onset')
+    img_onset_time = core.getTime()  # record the image onset time
     
-    # wait for a response
-
-    resp = event.waitKeys(keyList = response_keys)
-
+    # show the image for 5-secs or until a key is pressed
+    
+    event.clearEvents()  # clear cached PsychoPy events
+    RT = -1  # keep track of the response time
+    get_keypress = False
+    
+    while not get_keypress:
+        # present the picture for a maximum of 5 seconds
+        if core.getTime() - img_onset_time >= 5.0:
+            et_tracker.sendMessage('time_out')
+            break
+        # check keyboard events
+        for keycode, modifier in event.getKeys(modifiers=True):
+            # Stop stimulus presentation when the spacebar is pressed
+            if keycode == 'h' or keycode == 's':
+                # send over a message to log the key press
+                el_tracker.sendMessage('key_pressed')
+                # get response time in ms, PsychoPy report time in sec
+                RT = int((core.getTime() - img_onset_time)*1000)
+                get_keypress = True
+                
     # stop recording, save information about the trial & mark trial end in the .EDF file
     
     # clear the screen
