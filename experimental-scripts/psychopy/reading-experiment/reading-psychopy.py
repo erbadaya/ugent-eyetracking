@@ -44,7 +44,7 @@
 # without the need of the eye-tracker
 # we will do that via the variable dummy_mode
 
-# Last update: 27/08/2024
+# Last update: 28/08/2024
 
 # Libraries
 
@@ -63,15 +63,14 @@ dummy_mode = False
 
 # Participant data
 
-info = {"Participant number": "", "EDF_name":""}
+info = {"Participant number": "", "Eye-tracking file name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
 while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
-    
-    behavioural_file = './behavioural/subject_' + ppt_number + '.txt'
+    behavioural_file = 'behavioural/pp_' + ppt_number + '.txt'
     edf_file = ppt_number + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
@@ -94,7 +93,7 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
 
 # Set up the folder to save .edf files in the STIM PC
 
-results_folder = 'et_results'
+results_folder = 'et_results/pp_' + str(info['Participant number'])
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from ET PC to STIM PC
@@ -197,7 +196,7 @@ if not dummy_mode:
 
 # In this example, we are not customising the calibration and validation
 
-message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
+message("The calibration will now start. Press the space bar to start. If you double press 'Enter', you can see the camera on the STIM PC, or 'c' to start calibrating afterwards.")
 
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
@@ -351,8 +350,6 @@ for trial in trials:
     et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK)
 
     # Next trial
-
-    ThisExp.nextEntry()
     
 # End of experiment
 

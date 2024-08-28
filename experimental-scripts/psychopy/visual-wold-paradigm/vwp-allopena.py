@@ -40,7 +40,7 @@
 # without the need of the eye-tracker
 # we will do that via the variable dummy_mode
 
-# Last update: 27/08/2024
+# Last update: 28/08/2024
 
 # Libraries
 
@@ -58,11 +58,11 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 # We will use this variable in a series of if-else statements everytime there would be a line of code calling the tracker
 # We will change it to 'False' when running the experiment in the lab
 
-dummy_mode = True
+dummy_mode = False
 
 # Get participant data
 
-info = {"Participant number": "", "EDF_name":""}
+info = {"Participant number": "", "Eye-tracking file name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
@@ -70,17 +70,21 @@ while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
     edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
-    behavioural_file = '/subject_' + ppt_number + '.txt'
+    behavioural_file = 'behavioural/pp_' + ppt_number + '.txt'
     edf_file = edf_name + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
 
 # Set up the folder to save .edf files in the STIM PC
+# There is one general folder for eye-tracking data (et_results) and within that folder, one per participant
+# This is because we are also taking screenshots of each trial for later data pre-processing
 
-results_folder = 'et_results'
+results_folder = 'et_results/pp_' + str(info['Participant number'])
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from ET PC to STIM PC
+
+# Set up the folder to save behavioural data
 
 # To communicate with participants
 
@@ -200,7 +204,7 @@ if not dummy_mode:
 # In this example, we are customising the calibration and validation
 # We are setting the background to white, to match our stimuli and the background of the experiment in general
 
-message("The calibration will now start. If you double press 'Enter', you can see the camera, or 'c' to start calibrating afterwards.")
+message("The calibration will now start. Press the space bar to start. If you double press 'Enter', you can see the camera on the STIM PC, or 'c' to start calibrating afterwards.")
 
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
@@ -373,8 +377,7 @@ for trial in trials:
     # send a 'TRIAL_RESULT' message to mark the end of trial, see Data
     # Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
     et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK)
-    
-    ThisExp.nextEntry()
+
 
 # End of experiment
 
@@ -389,6 +392,8 @@ if not dummy_mode:
     et_tracker.close() # close the link
 
 # Close & quit PsychoPy
+
+message("That's the end of the experiment. Press the spacebar to exit.")
 
 win.close()
 core.quit()

@@ -6,14 +6,14 @@
 # There is no experimental task in this script
 # The objective is to see the sequence in which commands are sent to the tracker
 
-# Last updated: 27/08/2024
+# Last updated: 28/08/2024
 
 # Before the experiment
 # Load libraryes
 
 import pylink
 import os # for path creation
-from psychopy import visual, gui # basic psychopy modules for window and getting participant data
+from psychopy import gui, visual, event, logging, data, core
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # for calibration and validation 
 
 # Set up a a variable to run the script on a computer not connected to the tracker
@@ -24,7 +24,7 @@ dummy_mode = False
 
 # Get participant data
 
-info = {"Participant number": "", "EDF_name":""}
+info = {"Participant number": "", "Eye-tracking file name":""}
 wk_dir = os.getcwd()
 
 ppt_number_taken = True
@@ -32,8 +32,7 @@ while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
     edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
-    
-    behavioural_file = '/subject_' + ppt_number + '.txt'
+    behavioural_file = 'behavioural/pp_' + ppt_number + '.txt'
     edf_file = edf_name + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
         ppt_number_taken = False
@@ -132,6 +131,8 @@ if not dummy_mode:
     
 # 4. Calibration and validation
 
+message("The calibration will now start. Press the space bar to start. If you double press 'Enter', you can see the camera on the STIM PC, or 'c' to start calibrating afterwards.")
+
 # In this example, we are not customising the calibration and validation
 
 if not dummy_mode:
@@ -201,6 +202,8 @@ if not dummy_mode:
     et_tracker.close() # close the link
 
 # Close & quit PsychoPy
+
+message("That's the end of the experiment. Press the spacebar to exit.")
 
 win.close()
 core.quit()
