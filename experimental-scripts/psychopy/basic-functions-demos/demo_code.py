@@ -31,7 +31,7 @@ ppt_number_taken = True
 while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
-    edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
+    edf_name = str(info['Eye-tracking file name']) # to obtain EDF file name, you could alternatively use ppt_number
     behavioural_file = 'behavioural/pp_' + ppt_number + '.txt'
     edf_file = edf_name + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
@@ -43,6 +43,22 @@ results_folder = 'et_results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from ET PC to STIM PC
+
+# To communicate with participants
+
+def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0, 0), color = "black"):
+    message_on_screen = visual.TextStim(win, text = "OK")
+    message_on_screen.text    = message_text
+    message_on_screen.height  = height
+    message_on_screen.pos     = pos
+    message_on_screen.color   = color
+    
+    message_on_screen.draw()
+    win.flip()
+    if duration == 0: # for the welcome and goodbye
+        event.waitKeys(keyList = response_key)
+    else:
+        time.sleep(duration) # for the feedback
 
 # Create screen
 # You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
@@ -83,7 +99,15 @@ else:
 # 2. Open the .EDF file
 
 if not dummy_mode:
-    et_tracker.openDataFile(edf_file)
+    try:
+        et_tracker.openDataFile(edf_file)
+    except RuntimeError as err:
+        print('ERROR:', err)
+        # close the link if we have one open
+        if et_tracker.isConnected():
+            et_tracker.close()
+        core.quit()
+        sys.exit()
 
 # Add preamble (optional)
 
@@ -138,7 +162,11 @@ message("The calibration will now start. Press the space bar to start. If you do
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
     pylink.openGraphicsEx(genv)
-    et_tracker.doTrackerSetup()
+    try:
+        et_tracker.doTrackerSetup()
+    except RuntimeError as err:
+        print('ERROR:', err)
+        et_tracker.exitCalibration()
     
 # The experiment
 
@@ -166,8 +194,15 @@ for i in range(6):
     
     # Perform drift correction (drift check)
     
-    if not dummy_mode:
-        et_tracker.doDriftCorrect(int(1920/2), int(1080/2), 1, 1)
+    while not dummy_mode:
+        try:
+            error = et_tracker.doDriftCorrect(int(1920/2.0),
+                                              int(1080/2.0), 1, 1)
+            # break following a success drift-check
+            if error is not pylink.ESC_KEY:
+                break
+        except:
+            pass
         
     # Start recording
     
@@ -178,13 +213,14 @@ for i in range(6):
     # arguments: sample_to_file, events_to_file, sample_over_link,
     # event_over_link (1-yes, 0-no)
     if not dummy_mode:
-        et_tracker.startRecording(1, 1, 1, 1)
-    
+        try:
+            et_tracker.startRecording(1, 1, 1, 1)
+        except RuntimeError as error:
+            print("ERROR:", error)
     
     # End of trial
     
     if not dummy_mode:
-        et_tracker.sendMessage('!V CLEAR 128 128 128')
         pylink.pumpDelay(100) # give some time to catch everything
         et_tracker.stopRecording() # stop recording
         et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK) # mark the end of the trial

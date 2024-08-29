@@ -69,7 +69,7 @@ ppt_number_taken = True
 while ppt_number_taken:
     infoDlg = gui.DlgFromDict(dictionary = info, title = 'Participant information')
     ppt_number = str(info['Participant number'])
-    edf_name = str(info['EDF_name']) # to obtain EDF file name, you could alternatively use ppt_number
+    edf_name = str(info['Eye-tracking file name']) # to obtain EDF file name, you could alternatively use ppt_number
     behavioural_file = 'behavioural/pp_' + ppt_number + '.txt'
     edf_file = edf_name + '.EDF' # remember to add the .edf extension
     if not os.path.isfile(behavioural_file):
@@ -127,6 +127,59 @@ win = visual.Window(fullscr = True, checkTiming=False, color = (1, 1, 1), units 
 win_width = win.size[0]
 win_height = win.size[1]
 
+# Define functions for catching errors
+
+def skip_trial():
+    """Ends recording """
+    
+    et_tracker = pylink.getEYELINK()
+    # Stop recording
+    if et_tracker.isRecording():
+        # add 100 ms to catch final trial events
+        pylink.pumpDelay(100)
+        et_tracker.stopRecording()
+    # Clean the screen
+    win.flip()
+    # send a message to mark trial end
+    et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_ERROR)
+    return pylink.TRIAL_ERROR
+
+def abort_exp():
+    """ Terminate the task gracefully and retrieve the EDF data file
+    
+    file_to_retrieve: The EDF on the Host that we would like to download
+    win: the current window used by the experimental script
+    """
+    
+    et_tracker = pylink.getEYELINK()
+
+    if et_tracker.isConnected():
+        error = et_tracker.isRecording()
+        if error == pylink.TRIAL_OK:
+            skip_trial() 
+
+        # Put tracker in Offline mode
+        et_tracker.setOfflineMode()
+
+        # Clear the Host PC screen and wait for 500 ms
+        et_tracker.sendCommand('clear_screen 0')
+        pylink.msecDelay(500)
+
+        # Close the edf data file on the Host
+        et_tracker.closeDataFile()
+        try:
+            et_tracker.receiveDataFile(edf_file, local_edf)
+        except RuntimeError as error:
+            print('ERROR:', error)
+
+        # Close the link to the tracker.
+        et_tracker.close()
+
+    # close the PsychoPy window
+    win.close()
+    core.quit()
+    sys.exit()
+
 # Start of the experiment
 # 1. Open the connection to the ET PC
 
@@ -154,7 +207,15 @@ else:
 # 2. Open the .EDF file
 
 if not dummy_mode:
-    et_tracker.openDataFile(edf_file)
+    try:
+        et_tracker.openDataFile(edf_file)
+    except RuntimeError as err:
+        print('ERROR:', err)
+        # close the link if we have one open
+        if et_tracker.isConnected():
+            et_tracker.close()
+        core.quit()
+        sys.exit()
 
 # Add preamble (optional)
 
@@ -212,7 +273,11 @@ if not dummy_mode:
     background_color = win.color
     genv.setCalibrationColors(foreground_color, background_color)
     pylink.openGraphicsEx(genv)
-    et_tracker.doTrackerSetup()
+    try:
+        et_tracker.doTrackerSetup()
+    except RuntimeError as err:
+        print('ERROR:', err)
+        et_tracker.exitCalibration()
 
 # The experiment
 
@@ -269,14 +334,32 @@ for trial in trials:
     et_tracker.sendCommand("record_status_message '%s'" % status_msg)
     
     # Perform drift correction (drift check)
-    if not dummy_mode:
-        et_tracker.doDriftCorrect(int(win_width/2), int(win_height/2), 1, 1)
+    while not dummy_mode:
+        if (not et_tracker.isConnected()) or et_tracker.breakPressed():
+            abort_exp()
+        try:
+            error = et_tracker.doDriftCorrect(int(1920/2.0),
+                                              int(1080/2.0), 1, 1)
+            # break following a success drift-check
+            if error is not pylink.ESC_KEY:
+                break
+        except:
+            pass
         
+    # Start recording
+    
+    # put tracker in idle/offline mode before recording
+    et_tracker.setOfflineMode()
+
     # Start recording
     # arguments: sample_to_file, events_to_file, sample_over_link,
     # event_over_link (1-yes, 0-no)
     if not dummy_mode:
-        et_tracker.startRecording(1, 1, 1, 1)
+        try:
+            et_tracker.startRecording(1, 1, 1, 1)
+        except RuntimeError as error:
+            print("ERROR:", error)
+            skip_trial()
 
     # Draw stimuli
 
@@ -291,47 +374,65 @@ for trial in trials:
     print('show images')
     # send trigger that images have been sent
     et_tracker.sendMessage('image_onset')
-        
-    core.wait(2) # preview window
+    preview_onset = core.getTime()
     
     # tracking mouse clicks
     mouseIsDown = False
     instructionPlayed = False 
     targetPlayed = False
     audioFinished = False
-        
-    # loop for audio
+    trialSkipped = False
+
     while True:
-            if instructionPlayed == False:
-                carrier_sound.play()
-                # send trigger audio onset
-                et_tracker.sendMessage('audio_onset')
-                print("audio onset")
-                clock.wait(carrier_sound.getDuration() )
-                carrier_sound.stop()
-                instructionPlayed = True
-            if instructionPlayed == True and targetPlayed == False:
-                target_sound.play()
-                # send trigger target onset
-                et_tracker.sendMessage('target_onset')
-                print("target onset")
-                clock.wait(target_sound.getDuration())
-                target_sound.stop()
-                # send trigger target offset
-                et_tracker.sendMessage('target_offset')
-                print("target offset")
-                targetPlayed = True
-                mouse = event.Mouse(visible = False, newPos = (0,0)) 
-            if targetPlayed == True and audioFinished == False:
-                mouse.setVisible(visible = True)
-                if mouse.getPressed()[0] == 1 and mouseIsDown == False:
-                    mouseIsDown = True
+            if core.getTime() - preview_onset >= 2.0:
+                if instructionPlayed == False and trialSkipped == False:
+                    carrier_sound.play()
+                    # send trigger audio onset
+                    et_tracker.sendMessage('audio_onset')
+                    print("audio onset")
+                    clock.wait(carrier_sound.getDuration() )
+                    carrier_sound.stop()
+                    instructionPlayed = True
+                if instructionPlayed == True and targetPlayed == False and trialSkipped == False:
+                    target_sound.play()
+                    # send trigger target onset
+                    et_tracker.sendMessage('target_onset')
+                    print("target onset")
+                    clock.wait(target_sound.getDuration())
+                    target_sound.stop()
+                    # send trigger target offset
+                    et_tracker.sendMessage('target_offset')
+                    print("target offset")
+                    targetPlayed = True
                     mouse = event.Mouse(visible = False, newPos = (0,0)) 
-                if mouse.getPressed()[0] == 0 and mouseIsDown:
-                    mouseIsDown = False
+                if targetPlayed == True and audioFinished == False and trialSkipped == False:
+                    mouse.setVisible(visible = True)
+                    if mouse.getPressed()[0] == 1 and mouseIsDown == False:
+                        mouseIsDown = True
+                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
+                    if mouse.getPressed()[0] == 0 and mouseIsDown:
+                        mouseIsDown = False
+                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
+                        break
+                else:
                     mouse = event.Mouse(visible = False, newPos = (0,0)) 
                     break
-                        
+            error = et_tracker.isRecording()
+            if error is not pylink.TRIAL_OK:
+                et_tracker.sendMessage('tracker_disconnected')
+                skip_trial()
+                trialSkipped = True
+                break
+            for keycode, modifier in event.getKeys(modifiers=True):
+                if keycode == 'escape': # for skipping a trial
+                    et_tracker.sendMessage('trial_skipped')
+                    skip_trial()
+                    trialSkipped = True
+                    break
+                if keycode == "c" and (modifier['ctrl'] is True): # for terminating experiment
+                    et_tracker.sendMessage('experiment_aborted')
+                    abort_exp()
+                    
     # log information about areas of interest
     # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
     # RECTANGLE <id> <left> <top> <right> <bottom> [label]
