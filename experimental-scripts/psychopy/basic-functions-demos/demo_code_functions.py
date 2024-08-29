@@ -284,6 +284,7 @@ for i in range(6):
         if error is not pylink.TRIAL_OK:
             et_tracker.sendMessage('tracker_disconnected')
             skip_trial()
+            keypress = True
         for keycode, modifier in event.getKeys(modifiers=True):
             if keycode == 'escape': # for skipping a trial
                 et_tracker.sendMessage('trial_skipped')
