@@ -1,28 +1,25 @@
-# Basic script for a Visual World Paradigm eye-tracking experiment
+# Basic script eye-tracking
 # Author: Esperanza Badaya
-# 29/11/2023
+# 21/11/2023
 
+# NB we have created a very simple experiment to illustrate the steps described in Chapter 11
+# In this experiment, we are *not* covering regions of interest (see Visual World Paradigm example for this)
+# We are sending minimal (and redundant triggers) to illustrate how it is done, but NB that these triggers are redundant
+# because that information is already sent to the tracker by other means (namely, TRIALID)
 # We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
 # We are not covering handling errors
 # The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
 
-# Objectives of this script:
-# Illustrate how to define & send ROIs to the tracker
-# Illustrate how to send triggers
-# Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
-
 # The task:
-# This task is a short conceptual replication of Allopena et al. (1995)
-# We have made slight modifications (e.g., no familiarisation phase, fewer items on screen)
-# Display contains 4 images + a fixation cross in the middle
-# Preview window of 1000 ms
-# Audio begins ("Pick up the [target]")
-# Participants click on the item
+# Emotion detection: Say whether a face is happy or sad
+# Participants are shown a face and press 'h' for happy or 's' for sad
+# We are going to have 10 trials
+# NB this design has many flaws (e.g., we are not controlling for a balanced presentation of stimuli). 
 
 # Eye-tracking
 ## Start the experiment:
 # We want to record at 1000 Hz
-# We want a 9-point calibration & validation procedure
+# We want a 5-point calibration & validation procedure
 # We want to store all the events and sample data
 
 ## During the experiment
@@ -30,29 +27,22 @@
 # We want to see in the Host PC what trial number we are recording
 # We want to start and stop the recording in every trial
 # We want to send a trigger when images are shown
-# We want to send a trigger for audio onset
-# We want to send a trigger for target onset
-# We want to send a trigger for target offset
-# We want to save ROIs
-# Log information of set type, target type, target position, specific items shown
+# We want to save the variable of emotion and the image presented
 
 # Additionally, we are going to write this code so that we can try it on our machines
 # without the need of the eye-tracker
 # we will do that via the variable dummy_mode
 
-# Last update: 28/08/2024
+# Last update: 29/08/2024
 
 # Libraries
 
-from psychopy import gui, visual, event, logging, data, sound, clock, core
+from psychopy import gui, visual, event, logging, data, core
 import time, os, numpy
-
-from psychopy import prefs
-prefs.hardware['audioLib'] = ['ptb'] # ptb library has by far the lowest latencies
 
 # eye-tracking libraries
 import pylink
-from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember to put this script in your folder & sounds
+from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember to put this script in your folder
 
 # Set up a a variable to run the script on a computer not connected to the tracker
 # We will use this variable in a series of if-else statements everytime there would be a line of code calling the tracker
@@ -60,7 +50,16 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy # remember t
 
 dummy_mode = False
 
-# Get participant data
+# To get sound to work in PsychoPy 2024.2.1
+
+deviceManager = hardware.DeviceManager()
+deviceManager.addDevice(
+        deviceName='LoudSpeakers_2ndfloor',
+        deviceClass='psychopy.hardware.speaker.SpeakerDevice',
+        index=4.0
+    )
+
+# Participant data
 
 info = {"Participant number": "", "Eye-tracking file name":""}
 wk_dir = os.getcwd()
@@ -76,19 +75,16 @@ while ppt_number_taken:
         ppt_number_taken = False
 
 # Set up the folder to save .edf files in the STIM PC
-# There is one general folder for eye-tracking data (et_results) and within that folder, one per participant
-# This is because we are also taking screenshots of each trial for later data pre-processing
+# All .edf are saved in the same folder
 
-results_folder = 'et_results/pp_' + str(info['Participant number'])
+results_folder = 'et_results'
 if not os.path.exists(results_folder):
     os.makedirs(results_folder)
 local_edf = os.path.join(results_folder, edf_file) # we call this at the end to transfer .EDF from ET PC to STIM PC
 
-# Set up the folder to save behavioural data
-
 # To communicate with participants
 
-def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0.0, 0.0), color = "black"):
+def message(message_text = "", response_key = "space", duration = 0, height = None, pos = (0, 0), color = "black"):
     message_on_screen = visual.TextStim(win, text = "OK")
     message_on_screen.text    = message_text
     message_on_screen.height  = height
@@ -102,30 +98,26 @@ def message(message_text = "", response_key = "space", duration = 0, height = No
     else:
         time.sleep(duration) # for the feedback
 
-# stimuli
-# in this case, we have a .xlsx file (os_conditions.xlsx) that has the combination of stimuli + information about conditions
-# load it in
-# materials (audios and images) are stored in the materials folder
+# Load stimuli
 # check section 7.3 to follow this bit of code
 # https://docs.google.com/document/d/1bKIGYGZBmMxaqWgj31S55b8RhHIy8kqqMStaU7Ku7Vg/edit
 
-trial_list = data.importConditions('os_conditions.xlsx') 
-trials = data.TrialHandler(trial_list, nReps = 1, method = 'random')
 ThisExp = data.ExperimentHandler(dataFileName = behavioural_file, extraInfo = info)
+TrialList = data.importConditions('basicscript_conditions.xlsx') 
+trials = data.TrialHandler(TrialList, nReps = 1, method = 'random') # we only want 10 trials, not 20
 ThisExp.addLoop(trials)
+
+# Define response keys
+
+response_keys = ['s', 'h']
 
 # Create screen
 # You could then call win.size[0] and win.size[1] to get the width and height of the screen respectively and avoid typing it as is done in this example
-# In this case, we are setting the background color to white
 
-win = visual.Window(fullscr = True, checkTiming=False, color = (1, 1, 1), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
-
+win = visual.Window(fullscr = True, checkTiming=False, color = (0, 0, 0), units = 'pix') # checkTiming is due to PsychoPy's latest release where measuring screen rate is shown to participants, in my case it gets stuck, so adding this parameter to prevent that
 # more information on this issue here:
 # https://discourse.psychopy.org/t/is-there-a-way-to-skip-frame-rate-measurement-on-each-initialisation/36232
 # https://github.com/psychopy/psychopy/issues/5937
-
-win_width = win.size[0]
-win_height = win.size[1]
 
 # Define functions for catching errors
 
@@ -138,7 +130,6 @@ def skip_trial():
         # add 100 ms to catch final trial events
         pylink.pumpDelay(100)
         et_tracker.stopRecording()
-    # Clean the screen
     win.flip()
     # send a message to mark trial end
     et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_ERROR)
@@ -219,7 +210,7 @@ if not dummy_mode:
 
 # Add preamble (optional)
 
-preamble_text = 'VWP with pylink' 
+preamble_text = 'Basic Script in PsychoPy - Facial emotion detection' 
 et_tracker.sendCommand("add_file_preamble_text '%s'" % preamble_text)
 
 # 3. Configure the tracker
@@ -259,19 +250,15 @@ if not dummy_mode:
     et_tracker.sendCommand("file_sample_data = %s" % file_sample_flags)
     et_tracker.sendCommand("link_event_filter = %s" % link_event_flags)
     et_tracker.sendCommand("link_sample_data = %s" % link_sample_flags)
-
+    
 # 4. Calibration and validation
 
-# In this example, we are customising the calibration and validation
-# We are setting the background to white, to match our stimuli and the background of the experiment in general
+# In this example, we are not customising the calibration and validation
 
 message("The calibration will now start. Press the space bar to start. If you double press 'Enter', you can see the camera on the STIM PC, or 'c' to start calibrating afterwards.")
 
 if not dummy_mode:
     genv = EyeLinkCoreGraphicsPsychoPy(et_tracker, win) # we are using openGraphicsEx(), cf. manual openGraphics versus this.
-    foreground_color = (-1, -1, -1)
-    background_color = win.color
-    genv.setCalibrationColors(foreground_color, background_color)
     pylink.openGraphicsEx(genv)
     try:
         et_tracker.doTrackerSetup()
@@ -279,48 +266,28 @@ if not dummy_mode:
         print('ERROR:', err)
         et_tracker.exitCalibration()
 
-# The experiment
+# Communicate that the experiment is about to start
 
 message("The experiment will start now. Press the spacebar to continue.")
 
+# The experiment
+
 trial_index = 0
+
 for trial in trials:
-    
     trial_index += 1
+    
+    # hide mouse
+    
+    mouse = event.Mouse(visible = False) 
 
-    # Load stimuli
+    # Load the images to display
 
-    # presentation of visual stimuli
-        
-    img_width = 189
-    img_height = 189
-    
-    # positions
-    # because of EyeLinkCoreGraphicsPsychoPy, this needs to be in _pixels_
-    
-    y_displacement = int((win_height/2)/2) # half of the screen is the top (+) and the bottom (-), since 0 is the center. we want the image to be presented in the middle of the top and the bottom half
-    x_displacement = int((win_width/2)/2)
-    
-    positions = [[0, 0 + y_displacement], [0 +  x_displacement, 0], [0, 0 - y_displacement], [0 - x_displacement , 0]] # NB you could also have this in your conditions file! It's just here for illustrative purposes
-    numpy.random.shuffle(positions)
-    
-    # images
-    
-    image_O1 = visual.ImageStim(win, image = 'materials/images/' + trial["O1"], pos = positions[0], units = 'pix')
-    print(image_O1.pos)
-    image_O2 = visual.ImageStim(win, image = 'materials/images/' + trial["O2"], pos = positions[1], units = 'pix')
-    image_O3 = visual.ImageStim(win, image = 'materials/images/' + trial["O3"], pos = positions[2], units = 'pix')
-    image_O4 = visual.ImageStim(win, image = 'materials/images/' + trial["O4"], pos = positions[3], units = 'pix')
-    
-    #sound
-    # to send triggers for target onset, instead of measuring at what precise time it happens in an audio
-    # we have cut the audio in two, so the trigger is sent when the second audio (i.e., the target) is played
-    
-    carrier_sound = sound.Sound('materials/audios/' + trial["instruction_audio"],
-                                      stereo = True)
-    target_sound = sound.Sound('materials/audios/' + trial["target_audio"],
-                                      stereo = True)
-
+    image_stimuli = visual.ImageStim(win, image = trial["image"], pos = (0, 0), units = 'pix') # NB pos coordinates are in pixels: Required by the Graphics Environment, for all units, (0,0) is the center
+    image_stimuli.size/=6 # rescale
+    text_position_y = 0 - int(image_stimuli.size[1]/2) - int(50) 
+    text_stimuli = visual.TextStim(win, text = "Press 's' if the face is sad, 'h' if the face is happy",
+    pos = (0, text_position_y), color = "black", units = 'pix') 
 
     # Mark the beginning of the trial
     # Send message to the .EDF file (for later data segmentation) and to the ET PC for us
@@ -334,6 +301,7 @@ for trial in trials:
     et_tracker.sendCommand("record_status_message '%s'" % status_msg)
     
     # Perform drift correction (drift check)
+    
     while not dummy_mode:
         if (not et_tracker.isConnected()) or et_tracker.breakPressed():
             abort_exp()
@@ -345,7 +313,7 @@ for trial in trials:
                 break
         except:
             pass
-        
+
     # Start recording
     
     # put tracker in idle/offline mode before recording
@@ -360,101 +328,52 @@ for trial in trials:
         except RuntimeError as error:
             print("ERROR:", error)
             skip_trial()
-
-    # Draw stimuli
-
-    image_O1.draw()
-    image_O2.draw()
-    image_O3.draw()
-    image_O4.draw()
     
-    mouse = event.Mouse(visible = False, newPos = (0,0)) # hide the mouse during preview window + audio
-    
+    # Draw stimuli and wait for participants response
+    # Mark in the .EDF file when images were shown (i.e., send a trigger)
+
+    text_stimuli.draw()
+    image_stimuli.draw()
     win.flip()
-    print('show images')
+    
     # send trigger that images have been sent
-    et_tracker.sendMessage('image_onset')
-    preview_onset = core.getTime()
+    if not dummy_mode:
+        et_tracker.sendMessage('image_onset')
+    img_onset_time = core.getTime()  # record the image onset time
     
-    # tracking mouse clicks
-    mouseIsDown = False
-    instructionPlayed = False 
-    targetPlayed = False
-    audioFinished = False
-    trialSkipped = False
-
-    while True:
-            if core.getTime() - preview_onset >= 2.0:
-                if instructionPlayed == False and trialSkipped == False:
-                    carrier_sound.play()
-                    # send trigger audio onset
-                    et_tracker.sendMessage('audio_onset')
-                    print("audio onset")
-                    clock.wait(carrier_sound.getDuration() )
-                    carrier_sound.stop()
-                    instructionPlayed = True
-                if instructionPlayed == True and targetPlayed == False and trialSkipped == False:
-                    target_sound.play()
-                    # send trigger target onset
-                    et_tracker.sendMessage('target_onset')
-                    print("target onset")
-                    clock.wait(target_sound.getDuration())
-                    target_sound.stop()
-                    # send trigger target offset
-                    et_tracker.sendMessage('target_offset')
-                    print("target offset")
-                    targetPlayed = True
-                    mouse = event.Mouse(visible = False, newPos = (0,0)) 
-                if targetPlayed == True and audioFinished == False and trialSkipped == False:
-                    mouse.setVisible(visible = True)
-                    if mouse.getPressed()[0] == 1 and mouseIsDown == False:
-                        mouseIsDown = True
-                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
-                    if mouse.getPressed()[0] == 0 and mouseIsDown:
-                        mouseIsDown = False
-                        mouse = event.Mouse(visible = False, newPos = (0,0)) 
-                        break
-                else:
-                    mouse = event.Mouse(visible = False, newPos = (0,0)) 
-                    break
-            error = et_tracker.isRecording()
-            if error is not pylink.TRIAL_OK:
-                et_tracker.sendMessage('tracker_disconnected')
+    # show the image for 5-secs or until a key is pressed
+    
+    event.clearEvents()  # clear cached PsychoPy events
+    RT = -1  # keep track of the response time
+    get_keypress = False
+    
+    while not get_keypress:
+        # present the picture for a maximum of 5 seconds
+        if core.getTime() - img_onset_time >= 5.0:
+            et_tracker.sendMessage('time_out')
+            break
+        error = et_tracker.isRecording()
+        if error is not pylink.TRIAL_OK:
+            et_tracker.sendMessage('tracker_disconnected')
+            skip_trial()
+            get_keypress = True
+        # check keyboard events
+        for keycode, modifier in event.getKeys(modifiers=True):
+            # Stop stimulus presentation when the spacebar is pressed
+            if keycode == 'h' or keycode == 's':
+                # send over a message to log the key press
+                et_tracker.sendMessage('key_pressed')
+                # get response time in ms, PsychoPy report time in sec
+                RT = int((core.getTime() - img_onset_time)*1000)
+                get_keypress = True
+            if keycode == 'escape': # for skipping a trial
+                et_tracker.sendMessage('trial_skipped')
                 skip_trial()
-                trialSkipped = True
-                break
-            for keycode, modifier in event.getKeys(modifiers=True):
-                if keycode == 'escape': # for skipping a trial
-                    et_tracker.sendMessage('trial_skipped')
-                    skip_trial()
-                    trialSkipped = True
-                    break
-                if keycode == "c" and (modifier['ctrl'] is True): # for terminating experiment
-                    et_tracker.sendMessage('experiment_aborted')
-                    abort_exp()
-                    
-    # log information about areas of interest
-    # in DataViewer, coordinates start at the top, left corner (i.e., 0,0)
-    # RECTANGLE <id> <left> <top> <right> <bottom> [label]
-    # we need to know the size of the images and the size of the screen
-    
-    if not dummy_mode:
-        et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (1, int(positions[0][0]) + int(win_width/2) - int(img_width/2), int(positions[0][1]) + int(win_height/2) - int(img_height/2), int(positions[0][0]) + int(win_width/2) +int(img_width/2), int(positions[0][1]) + int(win_height/2) + int(img_height/2), trial["O1_type"]))
-        et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (2, int(positions[1][0]) + int(win_width/2) - int(img_width/2), int(positions[1][1]) + int(win_height/2) - int(img_height/2), int(positions[1][0]) + int(win_width/2) +int(img_width/2), int(positions[1][1]) + int(win_height/2) + int(img_height/2), trial["O2_type"]))
-        et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (3, int(positions[2][0]) + int(win_width/2) - int(img_width/2), int(positions[2][1]) + int(win_height/2) - int(img_height/2), int(positions[2][0]) + int(win_width/2) +int(img_width/2), int(positions[2][1]) + int(win_height/2) + int(img_height/2), trial["O3_type"]))
-        et_tracker.sendMessage('!V IAREA RECTANGLE %d %d %d %d %d %s' % (4, int(positions[3][0]) + int(win_width/2) - int(img_width/2), int(positions[3][1]) + int(win_height/2) - int(img_height/2), int(positions[3][0]) + int(win_width/2) +int(img_width/2), int(positions[3][1]) + int(win_height/2)  + int(img_height/2), trial["O4_type"]))
-            
-            
-    # we also want to send the actual images presented to DataViewer
-    # (just for the sake of it)
-    
-    if not dummy_mode:
-        screenshot = str(trial_index)+'.png'
-        scn_shot = os.path.join(results_folder, screenshot)
-        win.getMovieFrame()
-        win.saveMovieFrames(scn_shot)
-        et_tracker.sendMessage('!V IMGLOAD FILL %s' % screenshot)
-    
+                get_keypress = True
+            if keycode == 'c' and (modifier['ctrl'] is True): # for terminating experiment
+                et_tracker.sendMessage('experiment_aborted')
+                abort_exp()
+                
     # stop recording, save information about the trial & mark trial end in the .EDF file
     
     # clear the screen
@@ -466,20 +385,18 @@ for trial in trials:
     et_tracker.stopRecording()
 
     # log information about this trial in the EDF file
-        
-    et_tracker.sendMessage('!V TRIAL_VAR set type %s' % trial["set_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR target type %s' % trial["target_type"])
-    pylink.pumpDelay(50) # adding a break to the et so we don't lose messages
-    et_tracker.sendMessage('!V TRIAL_VAR O1 type %s' % trial["O1_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O2 type %s' % trial["O2_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O3 type %s' % trial["O3_type"])
-    et_tracker.sendMessage('!V TRIAL_VAR O4 type %s' % trial["O4_type"])
-        
+    # in this case, what specific stimuli was shown
+    # and the emotion shown
+    et_tracker.sendMessage('!V TRIAL_VAR image %s' % trial["image"])
+    et_tracker.sendMessage('!V TRIAL_VAR emotion %s' % trial["emotion"])
+
     # send a 'TRIAL_RESULT' message to mark the end of trial, see Data
     # Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
     et_tracker.sendMessage('TRIAL_RESULT %d' % pylink.TRIAL_OK)
 
-
+    # Next trial
+    ThisExp.nextEntry()
+    
 # End of experiment
 
 # We need to close the data file, transfer it from ET PC to STIM PC and then close the connection between both PCs (plus exist PsychoPy)
