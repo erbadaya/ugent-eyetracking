@@ -29,7 +29,7 @@ We want to store all the events and sample data
 
 During the experiment
 We want every trial to start with a drift correction
-Drift correction needs to occur at the left side of the screen (because Spanish is read left-to-right)
+Drift correction needs to occur at the left side of the screen (because English is read left-to-right)
 We want to see in the Host PC what trial number we are recording
 We want to start and stop the recording in every trial
 We want to send a trigger when the sentence is shown
