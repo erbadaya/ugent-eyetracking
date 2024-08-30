@@ -1,6 +1,6 @@
 # How to navigate this folder
 
-There are three folders here:
+There are three folders and a file here:
 
 ### 1. Audios GraphicsEx
 
@@ -53,3 +53,7 @@ The conditions of the experiment are saved in os_conditions.xlx
 This task is a short conceptual replication of [Allopena et al. (1995)](), where they examined the time course of lexical access of a given word. In their experiment(s), participants were shown the target word, an object that phonologically overlapped with it (i.e., its cohort competitor), an object that rhymed with it, and an unrelated object. This experiment is a simplification of theirs (e.g., no familiarisation phase, fewer items on screen, shorter instructions). In our experiment participants are shown four images on the screen for 1000 ms, and then they hear an instruction referring to one of the objects on the screen ("Pick up the [target]"). 
 
 If you find any typo or have any suggestions, please contact me at esperanza.badaya [at] ugent.be
+
+### simple_iohub.py
+
+This script is an adaptation of simply.py provided by PsychoPy to show the use of EyeLink with ioHub. The only extra element added is the naming of the .EDF file.
