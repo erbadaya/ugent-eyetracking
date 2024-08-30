@@ -1,39 +1,41 @@
-# Basic script eye-tracking
-# Author: Esperanza Badaya
-# 21/11/2023
+"""
+Basic script eye-tracking
+Author: Esperanza Badaya
+21/11/2023
 
-# NB we have created a very simple experiment to illustrate the steps described in Chapter 11
-# In this experiment, we are *not* covering regions of interest (see Visual World Paradigm example for this)
-# We are sending minimal (and redundant triggers) to illustrate how it is done, but NB that these triggers are redundant
-# because that information is already sent to the tracker by other means (namely, TRIALID)
-# We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
-# We are not covering handling errors
-# The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
+NB we have created a very simple experiment to illustrate the steps described in Chapter 11
+In this experiment, we are *not* covering regions of interest (see Visual World Paradigm example for this)
+We are sending minimal (and redundant triggers) to illustrate how it is done, but NB that these triggers are redundant
+because that information is already sent to the tracker by other means (namely, TRIALID)
+We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
+We are not covering handling errors
+The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
 
-# The task:
-# Emotion detection: Say whether a face is happy or sad
-# Participants are shown a face and press 'h' for happy or 's' for sad
-# We are going to have 10 trials
-# NB this design has many flaws (e.g., we are not controlling for a balanced presentation of stimuli). 
+The task:
+Emotion detection: Say whether a face is happy or sad
+Participants are shown a face and press 'h' for happy or 's' for sad
+We are going to have 10 trials
+NB this design has many flaws (e.g., we are not controlling for a balanced presentation of stimuli). 
 
-# Eye-tracking
-## Start the experiment:
-# We want to record at 1000 Hz
-# We want a 5-point calibration & validation procedure
-# We want to store all the events and sample data
+Eye-tracking
+Start the experiment:
+We want to record at 1000 Hz
+We want a 5-point calibration & validation procedure
+We want to store all the events and sample data
 
-## During the experiment
-# We want every trial to start with a drift correction
-# We want to see in the Host PC what trial number we are recording
-# We want to start and stop the recording in every trial
-# We want to send a trigger when images are shown
-# We want to save the variable of emotion and the image presented
+During the experiment
+We want every trial to start with a drift correction
+We want to see in the Host PC what trial number we are recording
+We want to start and stop the recording in every trial
+We want to send a trigger when images are shown
+We want to save the variable of emotion and the image presented
 
-# Additionally, we are going to write this code so that we can try it on our machines
-# without the need of the eye-tracker
-# we will do that via the variable dummy_mode
+Additionally, we are going to write this code so that we can try it on our machines
+without the need of the eye-tracker
+we will do that via the variable dummy_mode
 
-# Last update: 28/08/2024
+Last update: 28/08/2024
+"""
 
 # Libraries
 

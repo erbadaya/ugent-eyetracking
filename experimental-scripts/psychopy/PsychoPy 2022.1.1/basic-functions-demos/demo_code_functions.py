@@ -1,12 +1,14 @@
-# Basic commands for eye-tracking in PsychoPy using pylink
-# Author: Esperanza Badaya
-# 26/08/2024
+"""
+Basic commands for eye-tracking in PsychoPy using pylink
+Author: Esperanza Badaya
+26/08/2024
 
-# This script illustrates all the steps discussed in Chapter 10, eye-tracking section 10.4.1
-# There is no experimental task in this script
-# The objective is to see the sequence in which commands are sent to the tracker
+This script illustrates all the steps discussed in Chapter 10, eye-tracking section 10.4.1
+There is no experimental task in this script
+The objective is to see the sequence in which commands are sent to the tracker
 
-# Last updated: 28/08/2024
+Last updated: 28/08/2024
+"""
 
 # Before the experiment
 # Load libraryes

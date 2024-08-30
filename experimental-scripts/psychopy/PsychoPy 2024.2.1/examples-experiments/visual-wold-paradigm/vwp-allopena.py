@@ -1,46 +1,48 @@
-# Basic script for a Visual World Paradigm eye-tracking experiment
-# Author: Esperanza Badaya
-# 29/11/2023
+"""
+Basic script for a Visual World Paradigm eye-tracking experiment
+Author: Esperanza Badaya
+29/11/2023
 
-# We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
-# We are not covering handling errors
-# The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
+We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
+We are not covering handling errors
+The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
 
-# Objectives of this script:
-# Illustrate how to define & send ROIs to the tracker
-# Illustrate how to send triggers
-# Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
+Objectives of this script:
+Illustrate how to define & send ROIs to the tracker
+Illustrate how to send triggers
+Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
 
-# The task:
-# This task is a short conceptual replication of Allopena et al. (1998)
-# We have made slight modifications (e.g., no familiarisation phase, fewer items on screen)
-# Display contains 4 images + a fixation cross in the middle
-# Preview window of 1000 ms
-# Audio begins ("Pick up the [target]")
-# Participants click on the item
+The task:
+This task is a short conceptual replication of Allopena et al. (1998)
+We have made slight modifications (e.g., no familiarisation phase, fewer items on screen)
+Display contains 4 images + a fixation cross in the middle
+Preview window of 1000 ms
+Audio begins ("Pick up the [target]")
+Participants click on the item
 
-# Eye-tracking
-## Start the experiment:
-# We want to record at 1000 Hz
-# We want a 9-point calibration & validation procedure
-# We want to store all the events and sample data
+Eye-tracking
+Start the experiment:
+We want to record at 1000 Hz
+We want a 9-point calibration & validation procedure
+We want to store all the events and sample data
 
-## During the experiment
-# We want every trial to start with a drift correction
-# We want to see in the Host PC what trial number we are recording
-# We want to start and stop the recording in every trial
-# We want to send a trigger when images are shown
-# We want to send a trigger for audio onset
-# We want to send a trigger for target onset
-# We want to send a trigger for target offset
-# We want to save ROIs
-# Log information of set type, target type, target position, specific items shown
+During the experiment
+We want every trial to start with a drift correction
+We want to see in the Host PC what trial number we are recording
+We want to start and stop the recording in every trial
+We want to send a trigger when images are shown
+We want to send a trigger for audio onset
+We want to send a trigger for target onset
+We want to send a trigger for target offset
+We want to save ROIs
+Log information of set type, target type, target position, specific items shown
 
-# Additionally, we are going to write this code so that we can try it on our machines
-# without the need of the eye-tracker
-# we will do that via the variable dummy_mode
+Additionally, we are going to write this code so that we can try it on our machines
+without the need of the eye-tracker
+we will do that via the variable dummy_mode
 
-# Last update: 28/08/2024
+Last update: 28/08/2024
+"""
 
 # Libraries
 

@@ -1,50 +1,51 @@
-# Basic reading script
-# Author: Esperanza Badaya
-# 01/12/2023
+"""
+Basic reading script
+Author: Esperanza Badaya
+01/12/2023
 
 
-# Basic script for a reading eye-tracking experiment
-# We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
-# We are not covering handling errors
-# We are not covering reading in itself (e.g., why 13 and not 5 points for calibration, for example). The idea with this script is to explore how to create smaller and dynamic areas of interest (what can happen outside of reading research)
-# The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
+Basic script for a reading eye-tracking experiment
+We are not going to cover here creating functions to wrap up sections (see DataViewer proposed ideas)
+We are not covering handling errors
+We are not covering reading in itself (e.g., why 13 and not 5 points for calibration, for example). The idea with this script is to explore how to create smaller and dynamic areas of interest (what can happen outside of reading research)
+The bits of code pertaining the task itself are not commented (check the PsychoPy course to follow what's happening!)
 
-# Objectives of this script:
-# Illustrate how to define & send ROIs to the tracker
-# Similar to VWP, but with the difference that ROIs are smaller (and change per trial)
-# Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
+Objectives of this script:
+Illustrate how to define & send ROIs to the tracker
+Similar to VWP, but with the difference that ROIs are smaller (and change per trial)
+Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
 
-# The task
-# This task is a short replication of one of Mariia Baltais' thesis experiments
-# We have made slight modifications (e.g., fewer items, no counterbalancing)
-# Stimuli consist of sentences with 5 regions (marked as IA_# in the .xlsl file)
-# Participants are asked to read them silently
-# They move through the experiment by pressing the spacebar once they have finished reading the sentence
+The task
+We have made slight modifications (e.g., fewer items, no counterbalancing)
+Stimuli consist of sentences with 5 regions (marked as IA_in the .xlsl file)
+Participants are asked to read them silently
+They move through the experiment by pressing the spacebar once they have finished reading the sentence
 
-# Eye-tracking
-## Start the experiment:
-# We want to record at 1000 Hz
-# We want a 13-point calibration & validation procedure
-# We want to store all the events and sample data
+Eye-tracking
+Start the experiment:
+We want to record at 1000 Hz
+We want a 13-point calibration & validation procedure
+We want to store all the events and sample data
 
-## During the experiment
-# We want every trial to start with a drift correction
-# Drift correction needs to occur at the left side of the screen (because Spanish is read left-to-right)
-# We want to see in the Host PC what trial number we are recording
-# We want to start and stop the recording in every trial
-# We want to send a trigger when the sentence is shown
-# We want to save 5 ROIs (one per segment of the sentence)
-# NB ROI size changes in each trial, because of character length
-# Some discussion of how this will be implemented can be found here:
-# https://discourse.psychopy.org/t/extract-location-of-words-after-presenting-sentence-on-screen/3974/12
-# https://discourse.psychopy.org/t/position-of-stimuli/2483/4
-# Log information of sentence shown and condition.
+During the experiment
+We want every trial to start with a drift correction
+Drift correction needs to occur at the left side of the screen (because Spanish is read left-to-right)
+We want to see in the Host PC what trial number we are recording
+We want to start and stop the recording in every trial
+We want to send a trigger when the sentence is shown
+We want to save 5 ROIs (one per segment of the sentence)
+NB ROI size changes in each trial, because of character length
+Some discussion of how this will be implemented can be found here:
+https://discourse.psychopy.org/t/extract-location-of-words-after-presenting-sentence-on-screen/3974/12
+https://discourse.psychopy.org/t/position-of-stimuli/2483/4
+Log information of sentence shown and condition.
 
-# Additionally, we are going to write this code so that we can try it on our machines
-# without the need of the eye-tracker
-# we will do that via the variable dummy_mode
+Additionally, we are going to write this code so that we can try it on our machines
+without the need of the eye-tracker
+we will do that via the variable dummy_mode
 
-# Last update: 29/08/2024
+Last update: 29/08/2024
+"""
 
 # Libraries
 
