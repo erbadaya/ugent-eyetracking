@@ -280,5 +280,3 @@ Note that participants will only see the loop group1 or group2 depending on what
 8. Goodbye screen
 
 Once our participants have gone through all the selected rows of our loop (e.g., all of them, or a section, depending on what we specify), we want to show them a goodbye screen to thank them for their time and inform them that the experiment is over. We do this with a canvas plugin.
-
-Happy coding!
