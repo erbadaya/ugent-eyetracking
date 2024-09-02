@@ -13,7 +13,7 @@ Illustrate how to send triggers
 Review of eye-tracking experiment in PsychoPy with Pylink (see basic-script.py for the basic template with a mock experiment)
 
 The task:
-This task is a short conceptual replication of Allopena et al. (1998)
+This task is a short conceptual replication of Allopenna et al. (1998)
 We have made slight modifications (e.g., no familiarisation phase, fewer items on screen)
 Display contains 4 images + a fixation cross in the middle
 Preview window of 1000 ms
