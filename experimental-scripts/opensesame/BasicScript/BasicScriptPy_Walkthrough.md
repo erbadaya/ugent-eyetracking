@@ -55,4 +55,4 @@ Finally, at the end of each trial, we want to stop the recording:
 eyetracker.stop_recording()
 ```
 
-Note that there may be some delays in the presentation of stimuli and the recording of eye-tracking data. This is why it is important to send triggers so you can properly segment your data. If you do not have any specific inter-trial interval, this should be ok-ish with you. However, it is important you pilot your own code and note any significant lags. Happy coding!
+Note that there may be some delays in the presentation of stimuli and the recording of eye-tracking data. This is why it is important to send triggers so you can properly segment your data. If you do not have any specific inter-trial interval, this should be ok-ish with you. However, it is important you pilot your own code and note any significant lags. 
