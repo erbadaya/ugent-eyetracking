@@ -50,7 +50,7 @@ This experiment is based on [Rayner and Duffy's (1986)](https://link.springer.co
 
 The conditions of the experiment are saved in os_conditions.xlx
 
-This task is a short conceptual replication of [Allopena et al. (1995)](), where they examined the time course of lexical access of a given word. In their experiment(s), participants were shown the target word, an object that phonologically overlapped with it (i.e., its cohort competitor), an object that rhymed with it, and an unrelated object. This experiment is a simplification of theirs (e.g., no familiarisation phase, fewer items on screen, shorter instructions). In our experiment participants are shown four images on the screen for 1000 ms, and then they hear an instruction referring to one of the objects on the screen ("Pick up the [target]"). 
+This task is a short conceptual replication of [Allopenna et al. (1995)](https://www.sciencedirect.com/science/article/pii/S0749596X97925584), where they examined the time course of lexical access of a given word. In their experiment(s), participants were shown the target word, an object that phonologically overlapped with it (i.e., its cohort competitor), an object that rhymed with it, and an unrelated object. This experiment is a simplification of theirs (e.g., no familiarisation phase, fewer items on screen, shorter instructions). In our experiment participants are shown four images on the screen for 1000 ms, and then they hear an instruction referring to one of the objects on the screen ("Pick up the [target]"). 
 
 If you find any typo or have any suggestions, please contact me at esperanza.badaya [at] ugent.be
 
