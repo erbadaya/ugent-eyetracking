@@ -67,5 +67,3 @@ After ten trials, the experiment ends. We do not need to add any information for
 5. Goodbye screen
 
 Once our participants have gone through all the selected rows of our loop (e.g., all, a section, depending on what we specify), we want to show them a goodbye screen to thank them for their time and inform them the experiment is over. We do this with a canvas plugin.
-
-Happy coding!
