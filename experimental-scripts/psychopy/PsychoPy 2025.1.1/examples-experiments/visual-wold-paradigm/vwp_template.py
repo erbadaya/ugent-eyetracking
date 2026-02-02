@@ -229,8 +229,8 @@ def run_trial(trial, nr_images):
                             object_clicked = calculate_object_clicked(x_pos, y_pos, nr_images, trial, positions)
                             break
                         if my_clock.getTime() >= timeout_time:
-                            RT = 'timeout'
-                            object_clicked = 'timeout'
+                            RT = -99.9
+                            object_clicked = -99.9
                             break
                     else:
                         if sum(mouse.getPressed()) == 1 and mouseIsDown == False:
