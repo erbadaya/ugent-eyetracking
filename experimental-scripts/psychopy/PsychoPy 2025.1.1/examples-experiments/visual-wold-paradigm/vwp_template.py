@@ -70,7 +70,7 @@ calibration_type = "HV5"
 
 # visual world paradigm components
 
-task_look = 'task' # define whether participants have to do something (mouse) or is a look-and-listen task, options task or look
+task_look = 'look' # define whether participants have to do something (mouse) or is a look-and-listen task, options task or look
 nr_images = 4 # write the number of images that are shown on the screen, 2 or 4. if you want 3 or 5, you will need to think how to display them! 
 preview_length = 1.5 # write the time of the preview window
 img_width = 198
@@ -78,7 +78,11 @@ img_height = 198
 
 # optional: timeout parameters (Note: timeout is only applicable to task VWP)
 timeout = True
-timeout_time = 1 # time for continuing to the next trial
+timeout_time = 5 # time for continuing to the next trial
+
+# optional: time wait (Note: only applicable to 'look' VWP)
+
+duration_after_audio_offset = 1.5
 
 ##################################
 ## END COSTUMISATION PARAMETERS ##
@@ -220,25 +224,73 @@ def run_trial(trial, nr_images):
                     targetPlayed = True
                     mouse.setPos(newPos=(0, 0))
                 if targetPlayed == True and audioFinished == False and trialSkipped == False:
-                    mouse.setVisible(visible = True)
-                    if timeout:
-                        if sum(mouse.getPressed()) == 1 and mouseIsDown == False:
-                            RT = round(my_clock.getTime() * 1000)
-                            mouseIsDown = True
-                            x_pos, y_pos = mouse.getPos()
-                            object_clicked = calculate_object_clicked(x_pos, y_pos, nr_images, trial, positions)
+                    if task_look == 'task':
+                        mouse.setVisible(visible = True)
+                        if timeout:
+                            while mouseIsDown == False:
+                                if nr_images == 2:
+                                    if mouse.isPressedIn(image_1):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_1_label']
+                                        break
+                                    elif mouse.isPressedIn(image_2):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_2_label']
+                                        break
+                                elif nr_images == 4:
+                                    if mouse.isPressedIn(image_1):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_1_label']
+                                        break
+                                    elif mouse.isPressedIn(image_2):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_2_label']
+                                        break
+                                    elif mouse.isPressedIn(image_3):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_3_label']
+                                        break
+                                    elif mouse.isPressedIn(image_4):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_4_label']
+                                        break
+                                elif my_clock.getTime() >= timeout_time:
+                                    RT = -999.99
+                                    object_clicked = -999.99
+                                    break
                             break
-                        if my_clock.getTime() >= timeout_time:
-                            RT = -99.9
-                            object_clicked = -99.9
+                        else:
+                            while mouseIsDown == False:
+                                if nr_images == 2:
+                                    if mouse.isPressedIn(image_1):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_1_label']
+                                        break
+                                    elif mouse.isPressedIn(image_2):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_2_label']
+                                        break
+                                elif nr_images == 4:
+                                    if mouse.isPressedIn(image_1):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_1_label']
+                                        break
+                                    elif mouse.isPressedIn(image_2):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_2_label']
+                                        break
+                                    elif mouse.isPressedIn(image_3):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_3_label']
+                                        break
+                                    elif mouse.isPressedIn(image_4):
+                                        RT = round(my_clock.getTime() * 1000)
+                                        object_clicked = trial['image_4_label']
+                                        break
                             break
                     else:
-                        if sum(mouse.getPressed()) == 1 and mouseIsDown == False:
-                            RT = round(my_clock.getTime() * 1000)
-                            mouseIsDown = True
-                            x_pos, y_pos = mouse.getPos()
-                            object_clicked = calculate_object_clicked(x_pos, y_pos, nr_images, trial, positions)
-                            break
+                        clock.wait(duration_after_audio_offset)
+                        break
                 error = et_tracker.isRecording()
             if error is not pylink.TRIAL_OK:
                 et_tracker.sendMessage('tracker_disconnected')
@@ -251,7 +303,7 @@ def run_trial(trial, nr_images):
                     et_tracker.sendMessage('trial_skipped')
                     skip_trial()
                     trialSkipped = True
-                    mouse.setVisible(visible = False, newPos = (0,0)) 
+                    mouse.setVisible(visible = False) 
                     break
                 if keycode == "c" and (modifier['ctrl'] is True): # for terminating experiment
                     et_tracker.sendMessage('experiment_aborted')
@@ -284,13 +336,14 @@ def run_trial(trial, nr_images):
     et_tracker.sendMessage('!V TRIAL_VAR fluency %s' % trial["fluency"])
     pylink.pumpDelay(50) # adding a break to the et so we don't lose messages
     et_tracker.sendMessage('!V TRIAL_VAR honesty %s' % trial["honesty"])
-    et_tracker.sendMessage('!V TRIAL_VAR RT %d' % RT)
-    et_tracker.sendMessage('!V TRIAL_VAR object_clicked %s' % object_clicked)
+    if task_look == 'task': 
+        et_tracker.sendMessage('!V TRIAL_VAR RT %d' % RT)
+        et_tracker.sendMessage('!V TRIAL_VAR object_clicked %s' % object_clicked)
     
     ### COSTUMISE WITH WHATEVER INFORMATION YOU WANT TO STORE IN THE BEHAVIOURAL FILE
-    
-    trials.addData('RT', RT)
-    trials.addData('object_clicked', object_clicked)
+    if task_look == 'task': 
+        trials.addData('RT', RT)
+        trials.addData('object_clicked', object_clicked)
         
     # send a 'TRIAL_RESULT' message to mark the end of trial, see Data
     # Viewer User Manual, "Protocol for EyeLink Data to Viewer Integration"
@@ -342,12 +395,16 @@ def pilot_IARect(image, positions, img_width, img_height):
 
 def calculate_object_clicked(x_coor, y_coor, nr_images, trial, positions):
     # y increases upwards in PsychoPy 'pix'
+    
+    object_clicked = None
+    
     for image in range(nr_images):
         left_pix, right_pix, top_pix, bottom_pix = calculate_edges_image(image, positions, img_width, img_height)
         if (left_pix <= x_coor <= right_pix) and (top_pix <= y_coor <= bottom_pix):
             # Fix the key name: 'image_{i}_label' (not 'image_f{...}')
-            return trial[f'image_{image+1}_label']
-    return 'none'  # if no hit
+            object_clicked = trial[f'image_{image+1}_label']
+            return object_clicked
+    return object_clicked  
 
 def create_ias(nr_images, trial, positions):
 
